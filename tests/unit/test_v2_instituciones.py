@@ -228,6 +228,40 @@ class TestCampanaService:
         assert 'total_miembros' in stats
         assert stats['duracion_dias'] == (date(2025, 9, 30) - date(2025, 3, 1)).days
 
+
+    def test_estadisticas_total_muestras_cuenta_muestras_no_ues(self, db, yacimiento, usuario):
+        """total_muestras contabiliza muestras asociadas por campaña y por UE."""
+        from app.models.unidad_estratigrafica import UnidadEstratigrafica
+        from app.models.muestra import Muestra
+
+        c = CampanaService.crear(
+            yacimiento_id=yacimiento.id,
+            nombre='Camp Muestras',
+            anio=2026,
+            director_id=usuario.id,
+        )
+
+        ue = UnidadEstratigrafica(
+            yacimiento_id=yacimiento.id,
+            campana_id=c.id,
+            numero_ue=1,
+            tipo='deposito',
+        )
+        db.session.add(ue)
+        db.session.flush()
+
+        db.session.add_all([
+            Muestra(yacimiento_id=yacimiento.id, campana_id=c.id, tipo='ceramica'),
+            Muestra(yacimiento_id=yacimiento.id, ue_id=ue.id, tipo='sedimento'),
+            Muestra(yacimiento_id=yacimiento.id, ue_id=ue.id, campana_id=c.id, tipo='fito'),
+        ])
+        db.session.commit()
+
+        stats = CampanaService.estadisticas(c.id)
+
+        assert stats['total_ues'] == 1
+        assert stats['total_muestras'] == 3
+
     def test_actualizar_campana(self, db, yacimiento, usuario):
         """Actualizar campos de una campaña."""
         c = CampanaService.crear(yacimiento_id=yacimiento.id, nombre='Camp Upd', anio=2025, director_id=usuario.id)

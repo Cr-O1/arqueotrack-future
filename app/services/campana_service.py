@@ -2,8 +2,11 @@
 Servicio de Campañas — ArqueoTrack 2.0 (v2.0)
 """
 import structlog
+from sqlalchemy import or_
 from app import db, cache
 from app.models.campana import Campana
+from app.models.muestra import Muestra
+from app.models.unidad_estratigrafica import UnidadEstratigrafica
 
 log = structlog.get_logger(__name__)
 
@@ -79,10 +82,22 @@ class CampanaService:
         campana = Campana.query.get(campana_id)
         if not campana:
             return {}
+
+        ue_ids_subquery = (
+            campana.unidades_estratigraficas
+            .with_entities(UnidadEstratigrafica.id)
+        )
+        total_muestras = Muestra.query.filter(
+            or_(
+                Muestra.campana_id == campana.id,
+                Muestra.ue_id.in_(ue_ids_subquery),
+            )
+        ).count()
+
         return {
             'total_hallazgos': campana.total_hallazgos,
             'total_ues': campana.total_ues,
             'duracion_dias': campana.duracion_dias,
-            'total_muestras': campana.unidades_estratigraficas.count(),
+            'total_muestras': total_muestras,
             'total_miembros': campana.equipo.count(),
         }
