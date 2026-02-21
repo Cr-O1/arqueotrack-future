@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}Campañas · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('yacimiento.detalle', id=yacimiento.id) }}" class="breadcrumb">← {{ yacimiento.nombre }}</a>
+    <h1>⛏️ Campañas</h1>
+  </div>
+  <a href="{{ url_for('campana.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Nueva campaña</a>
+</div>
+
+{% if campanas %}
+<div class="lista-campanas">
+  {% for c in campanas %}
+  <div class="card-campana estado-{{ c.estado }}">
+    <div class="campana-header">
+      <div>
+        <h3><a href="{{ url_for('campana.detalle', yacimiento_id=yacimiento.id, campana_id=c.id) }}">{{ c.nombre }}</a></h3>
+        <span class="campana-anio">{{ c.anio }}</span>
+        {% if c.codigo %}<code class="codigo-campana">{{ c.codigo }}</code>{% endif %}
+      </div>
+      <span class="badge badge-estado-{{ c.estado }}">{{ c.estado | capitalize }}</span>
+    </div>
+    {% if c.fecha_inicio or c.fecha_fin %}
+    <p class="campana-fechas">
+      📅 {{ c.fecha_inicio.strftime('%d/%m/%Y') if c.fecha_inicio else '—' }} →
+         {{ c.fecha_fin.strftime('%d/%m/%Y') if c.fecha_fin else '—' }}
+    </p>
+    {% endif %}
+    {% if c.director %}
+    <p class="campana-director">👤 Director: {{ c.director.nombre_completo }}</p>
+    {% endif %}
+    {% if c.objetivos %}
+    <p class="campana-obj">{{ c.objetivos | truncate(150) }}</p>
+    {% endif %}
+    {% if c.presupuesto %}
+    <p class="campana-budget">💰 {{ '%.2f'|format(c.presupuesto) }} €{% if c.financiador %} · {{ c.financiador }}{% endif %}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p>Este yacimiento aún no tiene campañas registradas.</p>
+  <a href="{{ url_for('campana.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Crear primera campaña</a>
+</div>
+{% endif %}
+{% endblock %}

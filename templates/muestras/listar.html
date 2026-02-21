@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block titulo %}Muestras · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('yacimiento.detalle', id=yacimiento.id) }}" class="breadcrumb">← {{ yacimiento.nombre }}</a>
+    <h1>🧪 Muestras y Análisis</h1>
+  </div>
+  <a href="{{ url_for('muestra.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Nueva muestra</a>
+</div>
+
+<!-- Filtros por tipo -->
+{% set tipos = muestras | map(attribute='tipo') | unique | list %}
+{% if tipos %}
+<div class="filtros-chips">
+  <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}" class="chip {% if not request.args.get('tipo') %}chip-active{% endif %}">Todas</a>
+  {% for t in tipos %}
+  <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}?tipo={{ t }}" class="chip {% if request.args.get('tipo') == t %}chip-active{% endif %}">{{ t | capitalize }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if muestras %}
+<div class="tabla-container">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Código</th><th>Tipo</th><th>UE</th><th>Campaña</th><th>Estado</th><th>Laboratorio</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in muestras %}
+      <tr>
+        <td><code>{{ m.codigo }}</code></td>
+        <td><span class="badge badge-tipo-{{ m.tipo }}">{{ m.tipo | capitalize }}</span></td>
+        <td>{% if m.ue %}<a href="{{ url_for('ue.detalle', yacimiento_id=yacimiento.id, ue_id=m.ue.id) }}">UE {{ m.ue.numero_ue }}</a>{% else %}—{% endif %}</td>
+        <td>{% if m.campana %}{{ m.campana.anio }}{% else %}—{% endif %}</td>
+        <td>
+          {% if m.fecha_resultado %}
+          <span class="badge badge-success">✓ Con resultados</span>
+          {% elif m.fecha_envio_laboratorio %}
+          <span class="badge badge-warning">En laboratorio</span>
+          {% else %}
+          <span class="badge badge-secondary">Recogida</span>
+          {% endif %}
+        </td>
+        <td>{{ m.laboratorio or '—' }}</td>
+        <td>
+          <a href="{{ url_for('muestra.detalle', yacimiento_id=yacimiento.id, muestra_id=m.id) }}" class="btn btn-sm btn-outline">Ver</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No hay muestras registradas en este yacimiento.</p>
+  <p class="text-muted">Las muestras permiten análisis C14, palinológicos, antracológicos, cerámicos y otros.</p>
+  <a href="{{ url_for('muestra.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Registrar primera muestra</a>
+</div>
+{% endif %}
+{% endblock %}

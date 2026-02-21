@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block titulo %}Mapa de Sectores — {{ yacimiento.nombre }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% endblock %}
+
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}">Sectores</a> ›
+  <span>Mapa</span>
+</nav>
+
+<div class="page-header">
+  <h1>🗺️ Mapa de sectores</h1>
+  <p class="text-muted">{{ yacimiento.nombre }}</p>
+</div>
+
+<div class="mapa-layout">
+  <div id="mapa" style="height:600px; border-radius:12px; border:1px solid var(--border)"></div>
+
+  <div class="mapa-leyenda">
+    <h4>Sectores</h4>
+    <ul class="leyenda-lista">
+      {% for s in sectores_json %}
+      <li>
+        <span class="leyenda-color" style="background:{{ s.color or '#6366F1' }}"></span>
+        {{ s.nombre }} <small class="text-muted">({{ s.total_hallazgos or 0 }} hallazgos)</small>
+      </li>
+      {% endfor %}
+    </ul>
+    <hr>
+    <p class="text-muted small">🏺 = Hallazgo georeferenciado</p>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts_extra %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const sectoresData = {{ sectores_json | tojson }};
+const hallazgosData = {{ hallazgos_json | tojson }};
+
+const center = sectoresData.length > 0 && sectoresData[0].lat
+  ? [sectoresData[0].lat, sectoresData[0].lng]
+  : (hallazgosData.length > 0 && hallazgosData[0].lat
+      ? [hallazgosData[0].lat, hallazgosData[0].lng]
+      : [40.416775, -3.703790]);
+
+const map = L.map('mapa').setView(center, 16);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// Dibujar sectores
+sectoresData.forEach(s => {
+  const color = s.color || '#6366F1';
+
+  if (s.polygon_geojson) {
+    try {
+      const geo = typeof s.polygon_geojson === 'string' ? JSON.parse(s.polygon_geojson) : s.polygon_geojson;
+      L.geoJSON(geo, {
+        style: { color, fillColor: color, fillOpacity: 0.2, weight: 2 }
+      }).bindPopup(`<strong>${s.nombre}</strong><br>${s.descripcion || ''}`).addTo(map);
+    } catch (e) {}
+  }
+
+  if (s.lat && s.lng) {
+    L.circleMarker([s.lat, s.lng], { color, radius: 8, fillOpacity: 0.8 })
+      .bindPopup(`<strong>${s.nombre}</strong><br>${s.descripcion || ''}`)
+      .addTo(map);
+  }
+});
+
+// Dibujar hallazgos
+hallazgosData.forEach(h => {
+  if (!h.lat || !h.lng) return;
+  L.marker([h.lat, h.lng], {
+    icon: L.divIcon({ html: '🏺', className: 'leaflet-emoji-icon', iconSize: [24, 24] })
+  })
+  .bindPopup(`<strong>${h.codigo_acceso}</strong><br>${h.tipo || ''}<br><a href="/hallazgo/${h.id}">Ver ficha</a>`)
+  .addTo(map);
+});
+</script>
+{% endblock %}

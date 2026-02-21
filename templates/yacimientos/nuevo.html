@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block titulo %}Nuevo Yacimiento — ArqueoTrack{% endblock %}
+{% block contenido %}
+
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('main.inicio') }}" class="breadcrumb-link">← Inicio</a>
+    <h1>🗺️ Nuevo yacimiento</h1>
+  </div>
+</div>
+
+<div class="form-container">
+  <form method="POST" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-card">
+      <h3>Información básica</h3>
+
+      <div class="form-group">
+        {{ formulario.nombre.label(class="form-label required") }}
+        {{ formulario.nombre(class="form-control" + (" is-invalid" if formulario.nombre.errors else ""), placeholder="Yacimiento de El Argar") }}
+        {% for e in formulario.nombre.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ formulario.ubicacion.label(class="form-label") }}
+        {{ formulario.ubicacion(class="form-control" + (" is-invalid" if formulario.ubicacion.errors else ""), placeholder="Municipio, provincia, país") }}
+        {% for e in formulario.ubicacion.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ formulario.descripcion.label(class="form-label") }}
+        {{ formulario.descripcion(class="form-control" + (" is-invalid" if formulario.descripcion.errors else ""), rows=4, placeholder="Breve descripción del yacimiento, período cronológico, tipo de asentamiento…") }}
+        {% for e in formulario.descripcion.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ formulario.responsable.label(class="form-label") }}
+        {{ formulario.responsable(class="form-control" + (" is-invalid" if formulario.responsable.errors else ""), placeholder="Director/a de la excavación") }}
+        {% for e in formulario.responsable.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Fechas de excavación</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.fecha_inicio.label(class="form-label") }}
+          {{ formulario.fecha_inicio(class="form-control" + (" is-invalid" if formulario.fecha_inicio.errors else ""), type="date") }}
+          {% for e in formulario.fecha_inicio.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-group">
+          {{ formulario.fecha_fin.label(class="form-label") }}
+          {{ formulario.fecha_fin(class="form-control" + (" is-invalid" if formulario.fecha_fin.errors else ""), type="date") }}
+          {% for e in formulario.fecha_fin.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>📍 Ubicación geográfica</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.lat.label(class="form-label") }}
+          {{ formulario.lat(class="form-control", placeholder="37.9922", step="any", type="number", id="input-lat") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.lng.label(class="form-label") }}
+          {{ formulario.lng(class="form-control", placeholder="-1.8641", step="any", type="number", id="input-lng") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.altitud_media.label(class="form-label") }}
+          {{ formulario.altitud_media(class="form-control", placeholder="320", step="any", type="number") }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        {{ formulario.area.label(class="form-label") }}
+        {{ formulario.area(class="form-control", placeholder="5000", step="any", type="number") }}
+        <div class="form-hint">Área total del yacimiento en m²</div>
+      </div>
+
+      <!-- Mapa interactivo para selección -->
+      <div id="mapa-selector" class="mapa-container" style="height:300px; background:#e8f4f8; display:flex; align-items:center; justify-content:center; border-radius:8px;">
+        <p class="text-muted">🗺️ Mapa de selección de coordenadas</p>
+      </div>
+      {{ formulario.polygon_geojson(id="polygon-geojson", type="hidden") }}
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('main.inicio') }}" class="btn btn-outline">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Crear yacimiento</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

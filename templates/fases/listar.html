@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block titulo %}Fases del Proyecto — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <span>Fases</span>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1>📋 Fases del proyecto</h1>
+    <p class="text-muted">{{ fases | length }} fase{{ 's' if fases | length != 1 }}</p>
+  </div>
+  {% if puede_crear %}
+  <a href="{{ url_for('fase.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Nueva fase</a>
+  {% endif %}
+</div>
+
+{% if fases %}
+
+<!-- Barra de progreso general -->
+{% set finalizadas = fases | selectattr('estado', 'equalto', 'finalizada') | list | length %}
+{% set total = fases | length %}
+<div class="progreso-container">
+  <div class="progreso-label">Progreso general: {{ finalizadas }}/{{ total }} fases completadas</div>
+  <div class="progreso-barra">
+    <div class="progreso-fill" style="width: {{ (finalizadas / total * 100) | int if total > 0 else 0 }}%"></div>
+  </div>
+</div>
+
+<div class="fases-lista">
+  {% for f in fases %}
+  <div class="fase-card fase-{{ f.estado }}">
+    <div class="fase-card-header">
+      <div class="fase-info">
+        <span class="fase-estado-badge badge-{{ f.estado }}">{{ f.estado | replace('_', ' ') | title }}</span>
+        <h3>{{ f.nombre }}</h3>
+      </div>
+      <div class="fase-actions">
+        <a href="{{ url_for('fase.editar', fase_id=f.id) }}" class="btn btn-sm btn-outline">✏️ Editar</a>
+        <form action="{{ url_for('fase.eliminar', fase_id=f.id) }}" method="POST" style="display:inline"
+              onsubmit="return confirm('¿Eliminar la fase «{{ f.nombre }}»?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+        </form>
+      </div>
+    </div>
+
+    {% if f.descripcion %}
+    <p class="fase-desc">{{ f.descripcion }}</p>
+    {% endif %}
+
+    <div class="fase-meta">
+      {% if f.fecha_inicio %}
+      <span>📅 {{ f.fecha_inicio.strftime('%d/%m/%Y') }}</span>
+      {% endif %}
+      {% if f.fecha_fin %}
+      <span>→ {{ f.fecha_fin.strftime('%d/%m/%Y') }}</span>
+      {% endif %}
+      {% if f.presupuesto %}
+      <span>💶 {{ "%.2f" | format(f.presupuesto) }} €</span>
+      {% endif %}
+    </div>
+
+    {% if f.objetivos %}
+    <details class="fase-detalle">
+      <summary>Ver detalles</summary>
+      <dl class="data-list">
+        {% if f.objetivos %}<dt>Objetivos</dt><dd>{{ f.objetivos }}</dd>{% endif %}
+        {% if f.metodologia %}<dt>Metodología</dt><dd>{{ f.metodologia }}</dd>{% endif %}
+        {% if f.resultados_esperados %}<dt>Resultados esperados</dt><dd>{{ f.resultados_esperados }}</dd>{% endif %}
+        {% if f.recursos_necesarios %}<dt>Recursos</dt><dd>{{ f.recursos_necesarios }}</dd>{% endif %}
+        {% if f.equipo_participante %}<dt>Equipo</dt><dd>{{ f.equipo_participante }}</dd>{% endif %}
+        {% if f.notas %}<dt>Notas</dt><dd>{{ f.notas }}</dd>{% endif %}
+      </dl>
+    </details>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <p class="empty-icon">📋</p>
+  <h3>Sin fases definidas</h3>
+  <p>Organiza el proyecto en fases (prospección, excavación, análisis, publicación…).</p>
+  {% if puede_crear %}
+  <a href="{{ url_for('fase.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Crear primera fase</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

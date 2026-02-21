@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block titulo %}Buscar por Código — ArqueoTrack{% endblock %}
+{% block contenido %}
+
+<div class="page-header">
+  <h1>🔍 Buscar hallazgo por código</h1>
+</div>
+
+<div class="search-container">
+  <div class="search-card">
+    <p class="search-desc">Introduce el código de 10 caracteres del hallazgo (p.ej. <code>AB-12345678</code>) para acceder directamente a su ficha.</p>
+
+    <form method="POST" novalidate>
+      {{ formulario.hidden_tag() }}
+      <div class="search-form-row">
+        <div class="form-group flex-grow">
+          {{ formulario.codigo.label(class="form-label") }}
+          {{ formulario.codigo(class="form-control form-control-lg" + (" is-invalid" if formulario.codigo.errors else ""),
+              placeholder="XXXXXXXXXX", maxlength=10, autocomplete="off",
+              style="font-family:monospace; letter-spacing:0.1em; text-transform:uppercase") }}
+          {% for e in formulario.codigo.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Buscar</button>
+      </div>
+    </form>
+
+    <div class="search-tip">
+      <h4>💡 ¿Cómo obtener el código?</h4>
+      <ul>
+        <li>Escanea el código QR de la etiqueta física del hallazgo.</li>
+        <li>Cópialo de la ficha del hallazgo en la aplicación.</li>
+        <li>Búscalo en el inventario del yacimiento.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Búsqueda rápida por API (sin recargar) -->
+  <div class="search-card" id="search-api-card">
+    <h3>Búsqueda rápida</h3>
+    <div class="search-form-row">
+      <input type="text" id="api-codigo" class="form-control form-control-lg"
+             placeholder="XXXXXXXXXX" maxlength="10" autocomplete="off"
+             style="font-family:monospace; letter-spacing:0.1em; text-transform:uppercase">
+      <button class="btn btn-outline btn-lg" onclick="buscarPorAPI()">Buscar</button>
+    </div>
+    <div id="api-resultado" class="api-result" style="display:none"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+function buscarPorAPI() {
+  const codigo = document.getElementById('api-codigo').value.trim().toUpperCase();
+  const resultado = document.getElementById('api-resultado');
+  if (!codigo) return;
+
+  resultado.style.display = 'block';
+  resultado.innerHTML = '<p class="text-muted">Buscando…</p>';
+
+  fetch('{{ url_for("main.api_buscar_hallazgo") }}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content
+    },
+    body: JSON.stringify({ codigo })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      resultado.innerHTML = `
+        <div class="alert alert-success">
+          <strong>✅ Hallazgo encontrado</strong><br>
+          <strong>Código:</strong> ${data.hallazgo.codigo}<br>
+          <strong>Tipo:</strong> ${data.hallazgo.tipo}<br>
+          <strong>Yacimiento:</strong> ${data.hallazgo.yacimiento}<br>
+          <strong>Fecha:</strong> ${data.hallazgo.fecha}<br>
+          <a href="/hallazgo/${data.hallazgo.id}" class="btn btn-sm btn-primary" style="margin-top:8px">Ver ficha completa</a>
+        </div>`;
+    } else {
+      resultado.innerHTML = `<div class="alert alert-error">❌ ${data.message}</div>`;
+    }
+  })
+  .catch(() => {
+    resultado.innerHTML = `<div class="alert alert-error">Error de conexión.</div>`;
+  });
+}
+
+document.getElementById('api-codigo').addEventListener('keydown', e => {
+  if (e.key === 'Enter') buscarPorAPI();
+});
+</script>
+{% endblock %}

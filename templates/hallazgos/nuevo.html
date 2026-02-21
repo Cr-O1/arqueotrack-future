@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block titulo %}Nuevo Hallazgo — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('main.inicio') }}">Inicio</a> ›
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <span>Nuevo hallazgo</span>
+</nav>
+
+<div class="page-header">
+  <h1>🏺 Registrar hallazgo</h1>
+  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
+</div>
+
+<div class="form-container">
+  <form method="POST" enctype="multipart/form-data" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-card">
+      <h3>Identificación</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.tipo.label(class="form-label required") }}
+          {{ formulario.tipo(class="form-control" + (" is-invalid" if formulario.tipo.errors else "")) }}
+          {% for e in formulario.tipo.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-group">
+          {{ formulario.sector_id.label(class="form-label") }}
+          {{ formulario.sector_id(class="form-control") }}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.material.label(class="form-label") }}
+          {{ formulario.material(class="form-control", placeholder="Cerámica, bronce, sílex…") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.datacion.label(class="form-label") }}
+          {{ formulario.datacion(class="form-control", placeholder="Bronce Final, siglo II a.C…") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Características físicas</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.dimensiones.label(class="form-label") }}
+          {{ formulario.dimensiones(class="form-control", placeholder="15x8x3 cm") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.peso.label(class="form-label") }}
+          {{ formulario.peso(class="form-control", placeholder="125.5", step="any", type="number") }}
+          <div class="form-hint">Peso en gramos</div>
+        </div>
+      </div>
+      <div class="form-group">
+        {{ formulario.estado_conservacion.label(class="form-label") }}
+        {{ formulario.estado_conservacion(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.descripcion.label(class="form-label") }}
+        {{ formulario.descripcion(class="form-control", rows=4, placeholder="Descripción detallada del hallazgo…") }}
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>📍 Localización</h3>
+      <div class="form-group">
+        {{ formulario.ubicacion.label(class="form-label") }}
+        {{ formulario.ubicacion(class="form-control", placeholder="Cuadrícula D4, capa 3") }}
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.lat.label(class="form-label") }}
+          {{ formulario.lat(class="form-control", step="any", type="number") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.lng.label(class="form-label") }}
+          {{ formulario.lng(class="form-control", step="any", type="number") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.altitud.label(class="form-label") }}
+          {{ formulario.altitud(class="form-control", step="any", type="number") }}
+          <div class="form-hint">Altitud en metros s.n.m.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        {{ formulario.fecha.label(class="form-label") }}
+        {{ formulario.fecha(class="form-control", type="date") }}
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Fotografía</h3>
+      <div class="form-group">
+        <label class="form-label">Foto del hallazgo</label>
+        <input type="file" name="foto" class="form-control" accept="image/*">
+        <div class="form-hint">JPG, PNG o WEBP. Máximo 10MB. Se generará thumbnail automáticamente.</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Extracción y destino</h3>
+      <div class="form-group">
+        {{ formulario.proceso_extraccion.label(class="form-label") }}
+        {{ formulario.proceso_extraccion(class="form-control", rows=3, placeholder="Descripción del proceso de extracción…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.destino.label(class="form-label") }}
+        {{ formulario.destino(class="form-control", placeholder="Museo de Almería, almacén de campaña…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.notas.label(class="form-label") }}
+        {{ formulario.notas(class="form-control", rows=3, placeholder="Observaciones adicionales…") }}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Registrar hallazgo</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

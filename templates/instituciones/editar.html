@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Editar {{ institucion.nombre }} - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <h1>✏️ Editar institución</h1>
+  <a href="{{ url_for('institucion.detalle', inst_id=institucion.id) }}" class="btn btn-outline">← Volver</a>
+</div>
+
+<div class="card form-card">
+  <form method="post" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-group">
+      {{ formulario.nombre.label }}
+      {{ formulario.nombre(class="form-control") }}
+      {% for err in formulario.nombre.errors %}<span class="error">{{ err }}</span>{% endfor %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        {{ formulario.tipo.label }}
+        {{ formulario.tipo(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.pais.label }}
+        {{ formulario.pais(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.ciudad.label }}
+        {{ formulario.ciudad(class="form-control") }}
+      </div>
+    </div>
+
+    <div class="form-group">
+      {{ formulario.descripcion.label }}
+      {{ formulario.descripcion(class="form-control", rows=4) }}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        {{ formulario.sitio_web.label }}
+        {{ formulario.sitio_web(class="form-control") }}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      <a href="{{ url_for('institucion.detalle', inst_id=institucion.id) }}" class="btn btn-outline">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

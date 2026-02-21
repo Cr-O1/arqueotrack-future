@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block titulo %}Mi Perfil — ArqueoTrack{% endblock %}
+{% block contenido %}
+
+<div class="page-header">
+  <h1>Mi perfil</h1>
+</div>
+
+<div class="profile-layout">
+
+  <!-- Tarjeta de perfil -->
+  <div class="profile-card">
+    <div class="profile-avatar">
+      {{ usuario.nombre[0] | upper }}{{ usuario.apellidos[0] | upper if usuario.apellidos else '' }}
+    </div>
+    <h2>{{ usuario.nombre }} {{ usuario.apellidos }}</h2>
+    <p class="profile-username">@{{ usuario.nombre_usuario }}</p>
+    {% if usuario.ocupacion %}
+    <p class="profile-ocupacion">{{ usuario.ocupacion }}</p>
+    {% endif %}
+    <p class="profile-email">✉️ {{ usuario.email }}</p>
+    {% if usuario.fecha_nacimiento %}
+    <p class="text-muted">🎂 {{ usuario.fecha_nacimiento.strftime('%d/%m/%Y') }}</p>
+    {% endif %}
+    <p class="text-muted small">Miembro desde {{ usuario.fecha_registro.strftime('%B %Y') if usuario.fecha_registro else '—' }}</p>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="profile-stats">
+    <h3>Actividad</h3>
+    <div class="stats-grid-2">
+      <div class="stat-card">
+        <span class="stat-number">{{ total_yacimientos }}</span>
+        <span class="stat-label">🗺️ Yacimientos</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">{{ total_hallazgos }}</span>
+        <span class="stat-label">🏺 Hallazgos</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">{{ total_eventos }}</span>
+        <span class="stat-label">📅 Eventos</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">{{ total_comentarios }}</span>
+        <span class="stat-label">💬 Comentarios</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="profile-actions">
+    <h3>Acciones</h3>
+    <div class="action-links">
+      <a href="{{ url_for('yacimiento.nuevo_yacimiento') }}" class="btn btn-primary">+ Nuevo yacimiento</a>
+      <a href="{{ url_for('institucion.mis_instituciones') }}" class="btn btn-outline">Mis instituciones</a>
+      <a href="{{ url_for('invitacion.pendientes') }}" class="btn btn-outline">Invitaciones pendientes</a>
+    </div>
+
+    <hr class="divider">
+
+    <div class="danger-zone">
+      <h4 class="text-danger">Zona de peligro</h4>
+      <p class="text-muted small">Esta acción eliminará permanentemente tu cuenta y todos tus datos.</p>
+      <button type="button" class="btn btn-danger" onclick="document.getElementById('modal-eliminar').style.display='flex'">
+        Eliminar mi cuenta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmación eliminar cuenta -->
+<div id="modal-eliminar" class="modal" style="display:none">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3>⚠️ ¿Eliminar cuenta?</h3>
+    </div>
+    <div class="modal-body">
+      <p>Esta acción es <strong>irreversible</strong>. Se eliminarán todos tus yacimientos, hallazgos y datos asociados.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-eliminar').style.display='none'">Cancelar</button>
+      <form action="{{ url_for('main.eliminar_cuenta') }}" method="POST" style="display:inline">
+        {{ csrf_token_field() if csrf_token_field is defined else '' }}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger">Sí, eliminar mi cuenta</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block titulo %}{{ title }} · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('campana.listar', yacimiento_id=yacimiento.id) }}" class="breadcrumb">← Campañas</a>
+    <h1>⛏️ {{ title }}</h1>
+  </div>
+</div>
+
+<div class="card form-card">
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="form-row">
+      <div class="form-group flex-grow">
+        {{ form.nombre.label }}
+        {{ form.nombre(class="form-control", placeholder="Campaña de excavación…") }}
+        {% for err in form.nombre.errors %}<span class="error">{{ err }}</span>{% endfor %}
+      </div>
+      <div class="form-group form-group-sm">
+        {{ form.anio.label }}
+        {{ form.anio(class="form-control", type="number", min="1900", max="2100") }}
+        {% for err in form.anio.errors %}<span class="error">{{ err }}</span>{% endfor %}
+      </div>
+      <div class="form-group form-group-sm">
+        {{ form.codigo.label }}
+        {{ form.codigo(class="form-control", placeholder="CAM-2025…") }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        {{ form.fecha_inicio.label }}
+        {{ form.fecha_inicio(class="form-control", type="date") }}
+      </div>
+      <div class="form-group">
+        {{ form.fecha_fin.label }}
+        {{ form.fecha_fin(class="form-control", type="date") }}
+      </div>
+      {% if form.estado is defined %}
+      <div class="form-group">
+        {{ form.estado.label }}
+        {{ form.estado(class="form-control") }}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      {{ form.objetivos.label }}
+      {{ form.objetivos(class="form-control", rows=3, placeholder="Objetivos científicos de la campaña…") }}
+    </div>
+
+    <div class="form-group">
+      {{ form.metodologia.label }}
+      {{ form.metodologia(class="form-control", rows=3, placeholder="Metodología empleada…") }}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        {{ form.presupuesto.label }}
+        {{ form.presupuesto(class="form-control", step="0.01", placeholder="0.00") }}
+      </div>
+      <div class="form-group">
+        {{ form.financiador.label }}
+        {{ form.financiador(class="form-control", placeholder="CSIC, Junta de CyL…") }}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        {% if campana %}Guardar cambios{% else %}Crear campaña{% endif %}
+      </button>
+      <a href="{{ url_for('campana.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

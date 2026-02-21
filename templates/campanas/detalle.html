@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block titulo %}{{ campana.nombre }} - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('campana.listar', yacimiento_id=yacimiento.id) }}" class="breadcrumb">← {{ yacimiento.nombre }} › Campañas</a>
+    <h1>⛏️ {{ campana.nombre }} <small class="text-muted">{{ campana.anio }}</small></h1>
+    <span class="badge badge-estado-{{ campana.estado }}">{{ campana.estado | capitalize }}</span>
+    {% if campana.codigo %}<code>{{ campana.codigo }}</code>{% endif %}
+  </div>
+  <div class="actions">
+    <a href="{{ url_for('campana.editar', yacimiento_id=yacimiento.id, campana_id=campana.id) }}" class="btn btn-secondary">✏️ Editar</a>
+    <!-- Cambiar estado rápido -->
+    <form method="post" action="{{ url_for('campana.cambiar_estado', yacimiento_id=yacimiento.id, campana_id=campana.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <select name="estado" onchange="this.form.submit()" class="form-control-sm">
+        {% for est in ['planificada','en_curso','finalizada','cancelada'] %}
+        <option value="{{ est }}" {% if est == campana.estado %}selected{% endif %}>{{ est | capitalize }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+
+<div class="layout-2col">
+  <!-- Información principal -->
+  <div>
+    <div class="card">
+      <h3>📋 Información</h3>
+      <dl class="data-list">
+        {% if campana.fecha_inicio %}<dt>Inicio</dt><dd>{{ campana.fecha_inicio.strftime('%d/%m/%Y') }}</dd>{% endif %}
+        {% if campana.fecha_fin %}<dt>Fin</dt><dd>{{ campana.fecha_fin.strftime('%d/%m/%Y') }}</dd>{% endif %}
+        {% if campana.director %}<dt>Director</dt><dd>{{ campana.director.nombre_completo }}</dd>{% endif %}
+        {% if campana.financiador %}<dt>Financiador</dt><dd>{{ campana.financiador }}</dd>{% endif %}
+        {% if campana.presupuesto %}<dt>Presupuesto</dt><dd>{{ '%.2f'|format(campana.presupuesto) }} €</dd>{% endif %}
+      </dl>
+    </div>
+
+    {% if campana.objetivos %}
+    <div class="card mt-2">
+      <h3>🎯 Objetivos</h3>
+      <p>{{ campana.objetivos }}</p>
+    </div>
+    {% endif %}
+
+    {% if campana.metodologia %}
+    <div class="card mt-2">
+      <h3>🔬 Metodología</h3>
+      <p>{{ campana.metodologia }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Estadísticas -->
+  <div>
+    <div class="card">
+      <h3>📊 Estadísticas</h3>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-number">{{ stats.total_hallazgos }}</span>
+          <span class="stat-label">Hallazgos</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">{{ stats.total_ues }}</span>
+          <span class="stat-label">UEs</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">{{ stats.total_muestras }}</span>
+          <span class="stat-label">Muestras</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-2">
+      <h3>🔗 Accesos rápidos</h3>
+      <ul class="quick-links">
+        <li><a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}?campana={{ campana.id }}">🧱 Unidades Estratigráficas</a></li>
+        <li><a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}?campana={{ campana.id }}">🧪 Muestras</a></li>
+        <li><a href="{{ url_for('hallazgo.listar', yacimiento_id=yacimiento.id) if 'hallazgo.listar' in url_for.__globals__ else '#' }}">🏺 Hallazgos</a></li>
+      </ul>
+    </div>
+
+    <!-- Eliminar campaña (solo propietario) -->
+    {% if current_user.id == yacimiento.propietario_id %}
+    <div class="card card-danger mt-2">
+      <h3>⚠️ Zona peligrosa</h3>
+      <form method="post" action="{{ url_for('campana.eliminar', yacimiento_id=yacimiento.id, campana_id=campana.id) }}" onsubmit="return confirm('¿Eliminar campaña «{{ campana.nombre }}»? Esta acción no se puede deshacer.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger">🗑️ Eliminar campaña</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

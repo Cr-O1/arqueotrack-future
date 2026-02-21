@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titulo %}ArqueoTrack — Gestión Arqueológica Profesional{% endblock %}
+
+{% block contenido %}
+<div class="portada">
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>🏺 ArqueoTrack</h1>
+      <p class="hero-tagline"><em>Si encuentras algo… no lo muevas. Regístralo.</em></p>
+      <p class="hero-desc">
+        La plataforma de gestión arqueológica para equipos profesionales e instituciones.
+        Registra hallazgos, documenta excavaciones, gestiona campañas y colabora en tiempo real.
+      </p>
+      <div class="hero-actions">
+        <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-lg">Comenzar gratis</a>
+        <a href="{{ url_for('auth.iniciar_sesion') }}" class="btn btn-outline btn-lg">Iniciar sesión</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🗺️</span>
+        <h3>Yacimientos y Sectores</h3>
+        <p>Registra yacimientos arqueológicos con coordenadas GPS, polígonos geoespaciales y gestión de sectores en mapa interactivo.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🏺</span>
+        <h3>Hallazgos con Código QR</h3>
+        <p>Cada hallazgo recibe un código alfanumérico único de 10 caracteres. Documenta tipo, material, datación, dimensiones y fotografías.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🧱</span>
+        <h3>Estratigrafía Avanzada</h3>
+        <p>Registra Unidades Estratigráficas con colores Munsell, cotas y composición. Construye la Matriz de Harris automáticamente.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🏛️</span>
+        <h3>Gestión Institucional</h3>
+        <p>Multi-tenant con 8 roles institucionales. Organiza equipos por institución, campaña y yacimiento con auditoría completa.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🧪</span>
+        <h3>Muestras y Análisis</h3>
+        <p>Gestiona muestras C14, palinológicas, antracológicas y cerámicas desde la recogida hasta los resultados del laboratorio.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">👥</span>
+        <h3>Colaboración en Equipo</h3>
+        <p>Invita colaboradores con 5 niveles de permiso. Sistema de invitaciones por email con roles granulares por yacimiento.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>¿Listo para digitalizar tus excavaciones?</h2>
+    <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-lg">Crear cuenta gratuita</a>
+  </section>
+
+</div>
+{% endblock %}

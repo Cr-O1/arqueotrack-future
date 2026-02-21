@@ -1,0 +1,173 @@
+version: '3.9'
+
+# ─── ArqueoTrack 2.0 - Docker Compose ─────────────────────────────────────────
+# Servicios:
+#   - postgres    → PostgreSQL 15 + PostGIS 3.3
+#   - redis       → Redis 7 (caché + broker Celery)
+#   - app         → Aplicación Flask con hot-reload
+#   - celery      → Worker Celery (tareas asíncronas)
+#   - celery-beat → Planificador de tareas periódicas
+#   - flower      → Monitor Celery (http://localhost:5555)
+#   - minio       → Almacenamiento S3-compatible (opcional, --profile minio)
+
+x-app-env: &app-env
+  FLASK_ENV: development
+  FLASK_DEBUG: "1"
+  DATABASE_URL: postgresql://${POSTGRES_USER:-arqueotrack_user}:${POSTGRES_PASSWORD:-arqueotrack_dev_pass}@postgres:5432/${POSTGRES_DB:-arqueotrack}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+  LOG_FORMAT: console
+  LOG_LEVEL: DEBUG
+  STORAGE_BACKEND: local
+  STORAGE_LOCAL_PATH: /app/uploads
+  STORAGE_LOCAL_URL: /uploads
+
+services:
+
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: arqueotrack_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-arqueotrack}
+      POSTGRES_USER: ${POSTGRES_USER:-arqueotrack_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arqueotrack_dev_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arqueotrack_user} -d ${POSTGRES_DB:-arqueotrack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: arqueotrack_redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arqueotrack_app
+    environment:
+      <<: *app-env
+    volumes:
+      - .:/app
+      - uploads_data:/app/uploads
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: flask run --host=0.0.0.0 --port=5000 --reload
+    restart: unless-stopped
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arqueotrack_celery
+    environment:
+      <<: *app-env
+    volumes:
+      - .:/app
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.tasks.celery_app.celery worker
+      --loglevel=info
+      --concurrency=4
+      --queues=default,informes,imagenes
+      --hostname=worker@%h
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app.celery inspect ping -d worker@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arqueotrack_celery_beat
+    environment:
+      <<: *app-env
+    volumes:
+      - .:/app
+      - beat_data:/app/celerybeat
+    depends_on:
+      - redis
+      - celery
+    command: >
+      celery -A app.tasks.celery_app.celery beat
+      --loglevel=info
+      --scheduler celery.beat:PersistentScheduler
+      --schedule=/app/celerybeat/celerybeat-schedule
+    restart: unless-stopped
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arqueotrack_flower
+    environment:
+      <<: *app-env
+      FLOWER_BASIC_AUTH: ${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-flowerpass}
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery
+    command: >
+      celery -A app.tasks.celery_app.celery flower
+      --port=5555
+      --broker=redis://redis:6379/1
+      --persistent=True
+      --db=/tmp/flower.db
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: arqueotrack_minio
+    profiles: ["minio"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-arqueotrack_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_dev_pass}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
+  beat_data:
+  minio_data:

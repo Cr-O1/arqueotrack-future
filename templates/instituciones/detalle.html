@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block titulo %}{{ institucion.nombre }} - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1>
+      🏛️ {{ institucion.nombre }}
+      {% if institucion.verificada %}<span class="badge badge-success">✓ Verificada</span>{% else %}<span class="badge badge-warning">Pendiente verificación</span>{% endif %}
+    </h1>
+    <span class="badge badge-tipo">{{ institucion.tipo | capitalize }}</span>
+    {% if institucion.pais %}<span>📍 {{ institucion.pais }}{% if institucion.ciudad %}, {{ institucion.ciudad }}{% endif %}</span>{% endif %}
+    {% if institucion.sitio_web %}<a href="{{ institucion.sitio_web }}" target="_blank" class="btn btn-sm btn-outline">🌐 Web</a>{% endif %}
+  </div>
+  {% if es_director %}
+  <a href="{{ url_for('institucion.editar', inst_id=institucion.id) }}" class="btn btn-secondary">✏️ Editar</a>
+  {% endif %}
+</div>
+
+<div class="layout-detalle">
+  <!-- Info principal -->
+  <div class="card">
+    {% if institucion.descripcion %}
+    <section>
+      <h3>Descripción</h3>
+      <p>{{ institucion.descripcion }}</p>
+    </section>
+    {% endif %}
+
+    <!-- Estadísticas -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-number">{{ institucion.total_miembros }}</span>
+        <span class="stat-label">Miembros activos</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">{{ institucion.total_yacimientos }}</span>
+        <span class="stat-label">Yacimientos</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number">{{ institucion.total_campanas }}</span>
+        <span class="stat-label">Campañas</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- Miembros -->
+  <div class="card">
+    <h3>👥 Miembros</h3>
+
+    {% if es_director %}
+    <form method="post" action="{{ url_for('institucion.añadir_miembro', inst_id=institucion.id) }}" class="add-miembro-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="email" name="email" class="form-control" placeholder="Email del usuario…" required>
+      <select name="rol" class="form-control">
+        {% for rol in roles %}
+        <option value="{{ rol }}">{{ rol.replace('_', ' ') | capitalize }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Añadir</button>
+    </form>
+    {% endif %}
+
+    {% if miembros %}
+    <table class="tabla">
+      <thead>
+        <tr><th>Usuario</th><th>Rol</th><th>Desde</th>{% if es_director %}<th>Acciones</th>{% endif %}</tr>
+      </thead>
+      <tbody>
+        {% for memb in miembros %}
+        <tr>
+          <td>{{ memb.usuario.nombre_completo }}<br><small>{{ memb.usuario.email }}</small></td>
+          <td><span class="badge">{{ memb.rol_institucional.replace('_', ' ') | capitalize }}</span></td>
+          <td>{{ memb.fecha_ingreso.strftime('%d/%m/%Y') }}</td>
+          {% if es_director and memb.usuario_id != current_user.id %}
+          <td>
+            <form method="post" action="{{ url_for('institucion.cambiar_rol', inst_id=institucion.id, usuario_id=memb.usuario_id) }}" style="display:inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <select name="rol" class="form-control-sm" onchange="this.form.submit()">
+                {% for rol in roles %}
+                <option value="{{ rol }}" {% if rol == memb.rol_institucional %}selected{% endif %}>{{ rol.replace('_',' ') | capitalize }}</option>
+                {% endfor %}
+              </select>
+            </form>
+            <form method="post" action="{{ url_for('institucion.remover_miembro', inst_id=institucion.id, usuario_id=memb.usuario_id) }}" style="display:inline" onsubmit="return confirm('¿Dar de baja a este miembro?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">✕</button>
+            </form>
+          </td>
+          {% elif es_director %}
+          <td><small class="text-muted">(Tú)</small></td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">Aún no hay miembros.</p>
+    {% endif %}
+
+    {% if mi_rol and not es_director %}
+    <p class="text-muted mt-2">Tu rol: <strong>{{ mi_rol.replace('_', ' ') | capitalize }}</strong></p>
+    {% endif %}
+    {% if not mi_rol %}
+    <form method="post" action="{{ url_for('institucion.añadir_miembro', inst_id=institucion.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="email" value="{{ current_user.email }}">
+      <input type="hidden" name="rol" value="investigador_externo">
+      <button type="submit" class="btn btn-outline">Unirme a esta institución</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

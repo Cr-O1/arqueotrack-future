@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}404 — Página no encontrada{% endblock %}
+{% block contenido %}
+<div class="error-page">
+  <div class="error-code">404</div>
+  <h2>Página no encontrada</h2>
+  <p>La página que buscas no existe o ha sido movida. Como en arqueología: a veces excavas y no encuentras nada.</p>
+  <a href="{{ url_for('main.inicio') if current_user.is_authenticated else url_for('main.portada') }}" class="btn btn-primary">Volver al inicio</a>
+</div>
+{% endblock %}

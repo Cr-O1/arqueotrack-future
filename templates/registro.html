@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titulo %}Registro — ArqueoTrack{% endblock %}
+{% block contenido %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>🏺 Crear cuenta</h1>
+      <p>Únete a ArqueoTrack y empieza a documentar tus excavaciones</p>
+    </div>
+
+    <form method="POST" novalidate>
+      {{ formulario.hidden_tag() }}
+
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.nombre.label(class="form-label") }}
+          {{ formulario.nombre(class="form-control" + (" is-invalid" if formulario.nombre.errors else ""), placeholder="María") }}
+          {% for e in formulario.nombre.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-group">
+          {{ formulario.apellidos.label(class="form-label") }}
+          {{ formulario.apellidos(class="form-control" + (" is-invalid" if formulario.apellidos.errors else ""), placeholder="García López") }}
+          {% for e in formulario.apellidos.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        {{ formulario.nombre_usuario.label(class="form-label") }}
+        {{ formulario.nombre_usuario(class="form-control" + (" is-invalid" if formulario.nombre_usuario.errors else ""), placeholder="mgarcia") }}
+        {% for e in formulario.nombre_usuario.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ formulario.correo_electronico.label(class="form-label") }}
+        {{ formulario.correo_electronico(class="form-control" + (" is-invalid" if formulario.correo_electronico.errors else ""), placeholder="correo@ejemplo.com", type="email") }}
+        {% for e in formulario.correo_electronico.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.fecha_nacimiento.label(class="form-label") }}
+          {{ formulario.fecha_nacimiento(class="form-control" + (" is-invalid" if formulario.fecha_nacimiento.errors else ""), type="date") }}
+          {% for e in formulario.fecha_nacimiento.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-group">
+          {{ formulario.ocupacion.label(class="form-label") }}
+          {{ formulario.ocupacion(class="form-control" + (" is-invalid" if formulario.ocupacion.errors else ""), placeholder="Arqueólogo/a") }}
+          {% for e in formulario.ocupacion.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        {{ formulario.contraseña.label(class="form-label") }}
+        {{ formulario.contraseña(class="form-control" + (" is-invalid" if formulario.contraseña.errors else ""), placeholder="Mínimo 8 caracteres") }}
+        {% for e in formulario.contraseña.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ formulario.confirmar_contraseña.label(class="form-label") }}
+        {{ formulario.confirmar_contraseña(class="form-control" + (" is-invalid" if formulario.confirmar_contraseña.errors else "")) }}
+        {% for e in formulario.confirmar_contraseña.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Crear cuenta</button>
+    </form>
+
+    <div class="auth-footer">
+      ¿Ya tienes cuenta? <a href="{{ url_for('auth.iniciar_sesion') }}">Inicia sesión</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

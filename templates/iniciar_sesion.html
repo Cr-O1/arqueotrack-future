@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar Sesión — ArqueoTrack{% endblock %}
+{% block contenido %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>🏺 Bienvenido de nuevo</h1>
+      <p>Inicia sesión para acceder a tus yacimientos</p>
+    </div>
+
+    <form method="POST" novalidate>
+      {{ formulario.hidden_tag() }}
+
+      <div class="form-group">
+        {{ formulario.correo_electronico.label(class="form-label") }}
+        {{ formulario.correo_electronico(class="form-control" + (" is-invalid" if formulario.correo_electronico.errors else ""), placeholder="correo@ejemplo.com", type="email", autofocus=true) }}
+        {% for e in formulario.correo_electronico.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ formulario.contraseña.label(class="form-label") }}
+        {{ formulario.contraseña(class="form-control" + (" is-invalid" if formulario.contraseña.errors else "")) }}
+        {% for e in formulario.contraseña.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">{{ formulario.enviar.label.text }}</button>
+    </form>
+
+    <div class="auth-footer">
+      ¿No tienes cuenta? <a href="{{ url_for('auth.registro') }}">Regístrate gratis</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

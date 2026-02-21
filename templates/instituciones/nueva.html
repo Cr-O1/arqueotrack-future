@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block titulo %}Nueva Institución - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <h1>🏛️ Nueva Institución</h1>
+  <a href="{{ url_for('institucion.listar') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+<div class="card form-card">
+  <p class="info-box">
+    ℹ️ La institución quedará pendiente de verificación por un administrador antes de aparecer públicamente.
+  </p>
+  <form method="post" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-group">
+      {{ formulario.nombre.label }}
+      {{ formulario.nombre(class="form-control", placeholder="Universidad de Salamanca…") }}
+      {% for err in formulario.nombre.errors %}<span class="error">{{ err }}</span>{% endfor %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        {{ formulario.tipo.label }}
+        {{ formulario.tipo(class="form-control") }}
+        {% for err in formulario.tipo.errors %}<span class="error">{{ err }}</span>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ formulario.pais.label }}
+        {{ formulario.pais(class="form-control", placeholder="ES, FR, IT…") }}
+        {% for err in formulario.pais.errors %}<span class="error">{{ err }}</span>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ formulario.ciudad.label }}
+        {{ formulario.ciudad(class="form-control") }}
+      </div>
+    </div>
+
+    <div class="form-group">
+      {{ formulario.descripcion.label }}
+      {{ formulario.descripcion(class="form-control", rows=4, placeholder="Descripción de la institución, líneas de investigación…") }}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        {{ formulario.sitio_web.label }}
+        {{ formulario.sitio_web(class="form-control", placeholder="https://…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.logo_url.label if formulario.logo_url is defined }}
+        {% if formulario.logo_url is defined %}
+        {{ formulario.logo_url(class="form-control", placeholder="https://…/logo.png") }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Crear institución</button>
+      <a href="{{ url_for('institucion.listar') }}" class="btn btn-outline">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

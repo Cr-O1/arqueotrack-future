@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block titulo %}Eventos — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <span>Eventos</span>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1>📅 Línea de tiempo</h1>
+    <p class="text-muted">{{ eventos | length }} evento{{ 's' if eventos | length != 1 }}</p>
+  </div>
+  {% if puede_crear %}
+  <a href="{{ url_for('evento.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Nuevo evento</a>
+  {% endif %}
+</div>
+
+{% if eventos %}
+<div class="timeline">
+  {% for ev in eventos %}
+  <div class="timeline-item tipo-{{ ev.tipo }}">
+    <div class="timeline-marker">
+      {% if ev.tipo == 'hallazgo' %}🏺
+      {% elif ev.tipo == 'reunion' %}🤝
+      {% elif ev.tipo == 'incidencia' %}⚠️
+      {% elif ev.tipo == 'muestra' %}🧪
+      {% elif ev.tipo == 'visita' %}👁️
+      {% else %}📅{% endif %}
+    </div>
+    <div class="timeline-content">
+      <div class="timeline-header">
+        <h3>{{ ev.titulo }}</h3>
+        <div class="timeline-meta">
+          <span class="badge badge-{{ ev.prioridad }}">{{ ev.prioridad }}</span>
+          <span class="badge badge-outline">{{ ev.estado_evento | replace('_', ' ') }}</span>
+          <time class="text-muted small">{{ ev.fecha.strftime('%d/%m/%Y %H:%M') }}</time>
+        </div>
+      </div>
+      <p>{{ ev.descripcion }}</p>
+      {% if ev.participantes %}
+      <p class="text-muted small">👥 {{ ev.participantes }}</p>
+      {% endif %}
+      {% if ev.resultados %}
+      <p class="text-muted small">✅ {{ ev.resultados }}</p>
+      {% endif %}
+      <div class="timeline-links">
+        {% if ev.fase %}
+        <span class="tag">📋 {{ ev.fase.nombre }}</span>
+        {% endif %}
+        {% if ev.hallazgo %}
+        <a href="{{ url_for('hallazgo.detalle', hallazgo_id=ev.hallazgo.id) }}" class="tag">🏺 {{ ev.hallazgo.codigo_acceso }}</a>
+        {% endif %}
+        {% if ev.sector %}
+        <span class="tag">📐 {{ ev.sector.nombre }}</span>
+        {% endif %}
+        {% if puede_crear %}
+        <form action="{{ url_for('evento.eliminar', evento_id=ev.id) }}" method="POST" style="display:inline"
+              onsubmit="return confirm('¿Eliminar este evento?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-xs btn-danger">Eliminar</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p class="empty-icon">📅</p>
+  <h3>Sin eventos registrados</h3>
+  <p>Registra reuniones, hallazgos importantes, incidencias y visitas al yacimiento.</p>
+  {% if puede_crear %}
+  <a href="{{ url_for('evento.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Registrar primer evento</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block titulo %}{{ hallazgo.codigo_acceso }} — ArqueoTrack{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('main.inicio') }}">Inicio</a> ›
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=hallazgo.yacimiento_id) }}">{{ hallazgo.yacimiento.nombre }}</a> ›
+  <span>{{ hallazgo.codigo_acceso }}</span>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1>🏺 {{ hallazgo.tipo or 'Hallazgo' }}</h1>
+    <code class="codigo-badge">{{ hallazgo.codigo_acceso }}</code>
+    {% if hallazgo.sector %}
+    <span class="badge" style="background: {{ hallazgo.sector.color or '#6366F1' }}20; color: {{ hallazgo.sector.color or '#6366F1' }}">
+      📐 {{ hallazgo.sector.nombre }}
+    </span>
+    {% endif %}
+  </div>
+  {% if puede_editar %}
+  <div class="header-actions">
+    <a href="{{ url_for('hallazgo.editar', hallazgo_id=hallazgo.id) }}" class="btn btn-outline">✏️ Editar</a>
+    <form action="{{ url_for('hallazgo.eliminar', hallazgo_id=hallazgo.id) }}" method="POST" style="display:inline"
+          onsubmit="return confirm('¿Eliminar este hallazgo?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<div class="detalle-layout">
+  <div class="detalle-main">
+
+    <!-- Foto -->
+    {% if hallazgo.foto %}
+    <div class="info-card">
+      <img src="{{ hallazgo.foto }}" alt="Foto del hallazgo {{ hallazgo.codigo_acceso }}"
+           class="hallazgo-foto" style="max-width:100%; border-radius:8px;">
+    </div>
+    {% endif %}
+
+    <!-- Descripción -->
+    {% if hallazgo.descripcion %}
+    <div class="info-card">
+      <h3>Descripción</h3>
+      <p>{{ hallazgo.descripcion }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Datos técnicos -->
+    <div class="info-card">
+      <h3>Datos técnicos</h3>
+      <dl class="data-list">
+        <dt>Tipo</dt><dd>{{ hallazgo.tipo or '—' }}</dd>
+        <dt>Material</dt><dd>{{ hallazgo.material or '—' }}</dd>
+        <dt>Datación</dt><dd>{{ hallazgo.datacion or '—' }}</dd>
+        <dt>Dimensiones</dt><dd>{{ hallazgo.dimensiones or '—' }}</dd>
+        {% if hallazgo.peso %}
+        <dt>Peso</dt><dd>{{ hallazgo.peso }} g</dd>
+        {% endif %}
+        <dt>Estado de conservación</dt><dd>{{ hallazgo.estado_conservacion or '—' }}</dd>
+      </dl>
+    </div>
+
+    <!-- Localización -->
+    <div class="info-card">
+      <h3>📍 Localización</h3>
+      <dl class="data-list">
+        <dt>Ubicación</dt><dd>{{ hallazgo.ubicacion or '—' }}</dd>
+        {% if hallazgo.lat and hallazgo.lng %}
+        <dt>Coordenadas</dt><dd>{{ "%.6f" | format(hallazgo.lat) }}, {{ "%.6f" | format(hallazgo.lng) }}</dd>
+        {% endif %}
+        {% if hallazgo.altitud %}
+        <dt>Altitud</dt><dd>{{ hallazgo.altitud }} m</dd>
+        {% endif %}
+        {% if hallazgo.fecha %}
+        <dt>Fecha de hallazgo</dt><dd>{{ hallazgo.fecha.strftime('%d/%m/%Y') }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+
+    <!-- Extracción y destino -->
+    {% if hallazgo.proceso_extraccion or hallazgo.destino or hallazgo.notas %}
+    <div class="info-card">
+      <h3>Extracción y destino</h3>
+      {% if hallazgo.proceso_extraccion %}
+      <p><strong>Proceso de extracción:</strong> {{ hallazgo.proceso_extraccion }}</p>
+      {% endif %}
+      {% if hallazgo.destino %}
+      <p><strong>Destino:</strong> {{ hallazgo.destino }}</p>
+      {% endif %}
+      {% if hallazgo.notas %}
+      <p><strong>Notas:</strong> {{ hallazgo.notas }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Comentarios -->
+    <div class="info-card">
+      <h3>💬 Comentarios ({{ comentarios | length }})</h3>
+      {% for c in comentarios %}
+      <div class="comentario">
+        <div class="comentario-header">
+          <strong>{{ c.usuario.nombre_usuario }}</strong>
+          <time class="text-muted small">{{ time_ago(c.fecha_creacion) }}</time>
+        </div>
+        <p class="comentario-body">{{ c.contenido }}</p>
+      </div>
+      {% else %}
+      <p class="text-muted">Sin comentarios todavía.</p>
+      {% endfor %}
+
+      <form action="{{ url_for('hallazgo.comentar', hallazgo_id=hallazgo.id) }}" method="POST" class="comentario-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="contenido" class="form-control" rows="3" placeholder="Escribe un comentario…" required></textarea>
+        <button type="submit" class="btn btn-sm btn-primary" style="margin-top:8px">Comentar</button>
+      </form>
+    </div>
+
+  </div>
+
+  <!-- Aside -->
+  <div class="detalle-aside">
+    <div class="aside-card">
+      <h4>Información</h4>
+      <dl class="data-list">
+        <dt>Yacimiento</dt>
+        <dd><a href="{{ url_for('yacimiento.detalle', yacimiento_id=hallazgo.yacimiento_id) }}">{{ hallazgo.yacimiento.nombre }}</a></dd>
+        {% if hallazgo.sector %}
+        <dt>Sector</dt>
+        <dd><a href="{{ url_for('sector.detalle', sector_id=hallazgo.sector.id) }}">{{ hallazgo.sector.nombre }}</a></dd>
+        {% endif %}
+        <dt>Registrado por</dt>
+        <dd>{{ hallazgo.user.nombre_usuario if hallazgo.user else '—' }}</dd>
+      </dl>
+    </div>
+
+    <div class="aside-card">
+      <h4>🔑 Código de acceso</h4>
+      <div class="codigo-display">
+        <code>{{ hallazgo.codigo_acceso }}</code>
+        <button class="btn btn-xs btn-outline" onclick="navigator.clipboard.writeText('{{ hallazgo.codigo_acceso }}')">
+          📋 Copiar
+        </button>
+      </div>
+      <p class="text-muted small">Usa este código para localizar el hallazgo rápidamente.</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block titulo %}Nuevo Evento — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <a href="{{ url_for('evento.listar', yacimiento_id=yacimiento.id) }}">Eventos</a> ›
+  <span>Nuevo</span>
+</nav>
+
+<div class="page-header">
+  <h1>📅 Registrar evento</h1>
+  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
+</div>
+
+<div class="form-container">
+  <form method="POST" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-card">
+      <h3>Tipo y título</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.tipo.label(class="form-label required") }}
+          {{ formulario.tipo(class="form-control" + (" is-invalid" if formulario.tipo.errors else "")) }}
+          {% for e in formulario.tipo.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-group">
+          {{ formulario.prioridad.label(class="form-label") }}
+          {{ formulario.prioridad(class="form-control") }}
+        </div>
+      </div>
+      <div class="form-group">
+        {{ formulario.titulo.label(class="form-label required") }}
+        {{ formulario.titulo(class="form-control" + (" is-invalid" if formulario.titulo.errors else ""), placeholder="Título descriptivo del evento") }}
+        {% for e in formulario.titulo.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Descripción y fecha</h3>
+      <div class="form-group">
+        {{ formulario.descripcion.label(class="form-label required") }}
+        {{ formulario.descripcion(class="form-control" + (" is-invalid" if formulario.descripcion.errors else ""), rows=4, placeholder="Descripción detallada del evento…") }}
+        {% for e in formulario.descripcion.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.fecha.label(class="form-label required") }}
+          {{ formulario.fecha(class="form-control" + (" is-invalid" if formulario.fecha.errors else ""), type="datetime-local") }}
+          {% for e in formulario.fecha.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-group">
+          {{ formulario.estado_evento.label(class="form-label") }}
+          {{ formulario.estado_evento(class="form-control") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Participantes y resultados</h3>
+      <div class="form-group">
+        {{ formulario.participantes.label(class="form-label") }}
+        {{ formulario.participantes(class="form-control", rows=2, placeholder="Nombres de las personas involucradas…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.resultados.label(class="form-label") }}
+        {{ formulario.resultados(class="form-control", rows=2, placeholder="Resultados o conclusiones del evento…") }}
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Vínculos (opcional)</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.fase_id.label(class="form-label") }}
+          {{ formulario.fase_id(class="form-control") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.hallazgo_id.label(class="form-label") }}
+          {{ formulario.hallazgo_id(class="form-control") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.sector_id.label(class="form-label") }}
+          {{ formulario.sector_id(class="form-control") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('evento.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Registrar evento</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

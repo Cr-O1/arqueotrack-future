@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block titulo %}Nueva Fase — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <a href="{{ url_for('fase.listar', yacimiento_id=yacimiento.id) }}">Fases</a> ›
+  <span>Nueva</span>
+</nav>
+
+<div class="page-header">
+  <h1>📋 Nueva fase del proyecto</h1>
+  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
+</div>
+
+<div class="form-container">
+  <form method="POST" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-card">
+      <h3>Información básica</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.nombre.label(class="form-label required") }}
+          {{ formulario.nombre(class="form-control" + (" is-invalid" if formulario.nombre.errors else "")) }}
+          {% for e in formulario.nombre.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-group">
+          {{ formulario.estado.label(class="form-label") }}
+          {{ formulario.estado(class="form-control") }}
+        </div>
+      </div>
+      <div class="form-group">
+        {{ formulario.descripcion.label(class="form-label") }}
+        {{ formulario.descripcion(class="form-control", rows=3, placeholder="Descripción general de la fase…") }}
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Planificación temporal</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.fecha_inicio.label(class="form-label") }}
+          {{ formulario.fecha_inicio(class="form-control", type="date") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.fecha_fin.label(class="form-label") }}
+          {{ formulario.fecha_fin(class="form-control", type="date") }}
+        </div>
+      </div>
+      <div class="form-group">
+        {{ formulario.presupuesto.label(class="form-label") }}
+        {{ formulario.presupuesto(class="form-control", step="0.01", type="number", placeholder="5000.00") }}
+        <div class="form-hint">Presupuesto en euros</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>Detalles técnicos</h3>
+      <div class="form-group">
+        {{ formulario.objetivos.label(class="form-label") }}
+        {{ formulario.objetivos(class="form-control", rows=3, placeholder="Objetivos específicos de esta fase…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.metodologia.label(class="form-label") }}
+        {{ formulario.metodologia(class="form-control", rows=3, placeholder="Metodología y técnicas a emplear…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.resultados_esperados.label(class="form-label") }}
+        {{ formulario.resultados_esperados(class="form-control", rows=2, placeholder="Qué se espera obtener al finalizar…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.recursos_necesarios.label(class="form-label") }}
+        {{ formulario.recursos_necesarios(class="form-control", rows=2, placeholder="Personal, equipamiento, materiales…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.equipo_participante.label(class="form-label") }}
+        {{ formulario.equipo_participante(class="form-control", rows=2, placeholder="Miembros del equipo en esta fase…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.notas.label(class="form-label") }}
+        {{ formulario.notas(class="form-control", rows=2, placeholder="Observaciones adicionales…") }}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('fase.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Crear fase</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

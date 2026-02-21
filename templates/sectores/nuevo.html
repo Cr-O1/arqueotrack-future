@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titulo %}Nuevo Sector — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}">Sectores</a> ›
+  <span>Nuevo</span>
+</nav>
+
+<div class="page-header">
+  <h1>📐 Nuevo sector</h1>
+  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
+</div>
+
+<div class="form-container">
+  <form method="POST" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-card">
+      <h3>Información del sector</h3>
+      <div class="form-group">
+        {{ formulario.nombre.label(class="form-label required") }}
+        {{ formulario.nombre(class="form-control" + (" is-invalid" if formulario.nombre.errors else ""), placeholder="Sector A, Zona norte, Cata 1…") }}
+        {% for e in formulario.nombre.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-group">
+        {{ formulario.descripcion.label(class="form-label") }}
+        {{ formulario.descripcion(class="form-control", rows=3, placeholder="Descripción del sector y sus características…") }}
+      </div>
+      <div class="form-group">
+        {{ formulario.color.label(class="form-label") }}
+        <div class="color-picker-row">
+          {{ formulario.color(class="form-control", type="color", style="width:60px; height:40px; padding:2px;") }}
+          <span class="form-hint">Color para identificar el sector en el mapa</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3>📍 Coordenadas</h3>
+      <div class="form-row">
+        <div class="form-group">
+          {{ formulario.lat.label(class="form-label") }}
+          {{ formulario.lat(class="form-control", step="any", type="number", placeholder="37.9922") }}
+        </div>
+        <div class="form-group">
+          {{ formulario.lng.label(class="form-label") }}
+          {{ formulario.lng(class="form-control", step="any", type="number", placeholder="-1.8641") }}
+        </div>
+      </div>
+      <div class="form-group">
+        {{ formulario.area.label(class="form-label") }}
+        {{ formulario.area(class="form-control", step="any", type="number", placeholder="200") }}
+        <div class="form-hint">Área del sector en m²</div>
+      </div>
+      {{ formulario.polygon_geojson(type="hidden") }}
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Crear sector</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

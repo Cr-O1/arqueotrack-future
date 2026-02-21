@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block titulo %}{{ yacimiento.nombre }} — ArqueoTrack{% endblock %}
+{% block contenido %}
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb">
+  <a href="{{ url_for('main.inicio') }}">Inicio</a> ›
+  <span>{{ yacimiento.nombre }}</span>
+</nav>
+
+<!-- Cabecera -->
+<div class="page-header">
+  <div>
+    <h1>🗺️ {{ yacimiento.nombre }}</h1>
+    {% if yacimiento.ubicacion %}
+    <p class="text-muted">📍 {{ yacimiento.ubicacion }}</p>
+    {% endif %}
+    <span class="badge badge-secondary">{{ rol_usuario | capitalize }}</span>
+  </div>
+  <div class="header-actions">
+    {% if puede_editar %}
+    <a href="{{ url_for('yacimiento.editar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">✏️ Editar</a>
+    {% endif %}
+    {% if es_propietario %}
+    <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">👥 Invitar</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div class="stats-grid">
+  <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}" class="stat-card stat-link">
+    <span class="stat-number">{{ total_sectores }}</span>
+    <span class="stat-label">📐 Sectores</span>
+  </a>
+  <a href="{{ url_for('fase.listar', yacimiento_id=yacimiento.id) }}" class="stat-card stat-link">
+    <span class="stat-number">{{ total_fases }}</span>
+    <span class="stat-label">📋 Fases</span>
+  </a>
+  <div class="stat-card">
+    <span class="stat-number">{{ total_hallazgos }}</span>
+    <span class="stat-label">🏺 Hallazgos</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">{{ hallazgos_con_foto }}</span>
+    <span class="stat-label">📷 Con foto</span>
+  </div>
+</div>
+
+<div class="detalle-layout">
+
+  <!-- Columna principal -->
+  <div class="detalle-main">
+
+    <!-- Descripción -->
+    {% if yacimiento.descripcion %}
+    <div class="info-card">
+      <h3>Descripción</h3>
+      <p>{{ yacimiento.descripcion }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Datos del yacimiento -->
+    <div class="info-card">
+      <h3>Datos del yacimiento</h3>
+      <dl class="data-list">
+        {% if yacimiento.responsable %}
+        <dt>Director/a</dt><dd>{{ yacimiento.responsable }}</dd>
+        {% endif %}
+        {% if yacimiento.fecha_inicio %}
+        <dt>Inicio excavación</dt><dd>{{ yacimiento.fecha_inicio.strftime('%d/%m/%Y') }}</dd>
+        {% endif %}
+        {% if yacimiento.fecha_fin %}
+        <dt>Fin excavación</dt><dd>{{ yacimiento.fecha_fin.strftime('%d/%m/%Y') }}</dd>
+        {% endif %}
+        {% if yacimiento.area_m2 %}
+        <dt>Área</dt><dd>{{ yacimiento.area_m2 | int }} m²</dd>
+        {% endif %}
+        {% if yacimiento.altitud_media %}
+        <dt>Altitud media</dt><dd>{{ yacimiento.altitud_media }} m</dd>
+        {% endif %}
+        {% if yacimiento.lat and yacimiento.lng %}
+        <dt>Coordenadas</dt><dd>{{ "%.6f" | format(yacimiento.lat) }}, {{ "%.6f" | format(yacimiento.lng) }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+
+    <!-- Hallazgos recientes -->
+    <div class="info-card">
+      <div class="card-header-row">
+        <h3>Hallazgos recientes</h3>
+        {% if puede_crear %}
+        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-sm btn-primary">+ Añadir hallazgo</a>
+        {% endif %}
+      </div>
+      {% if hallazgos %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Tipo</th>
+            <th>Material</th>
+            <th>Datación</th>
+            <th>Sector</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in hallazgos[:10] %}
+          <tr>
+            <td><code>{{ h.codigo_acceso }}</code></td>
+            <td>{{ h.tipo or '—' }}</td>
+            <td>{{ h.material or '—' }}</td>
+            <td>{{ h.datacion or '—' }}</td>
+            <td>{{ h.sector.nombre if h.sector else '—' }}</td>
+            <td><a href="{{ url_for('hallazgo.detalle', hallazgo_id=h.id) }}" class="btn btn-xs btn-outline">Ver</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if hallazgos | length > 10 %}
+      <p class="text-muted small">Mostrando 10 de {{ hallazgos | length }} hallazgos.</p>
+      {% endif %}
+      {% else %}
+      <p class="text-muted">Sin hallazgos registrados.
+        {% if puede_crear %}<a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yacimiento.id) }}">Registrar el primero</a>.{% endif %}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Barra lateral -->
+  <div class="detalle-aside">
+
+    <!-- Acciones -->
+    <div class="aside-card">
+      <h4>Acciones</h4>
+      <div class="action-list">
+        {% if puede_crear %}
+        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-primary btn-block">🏺 Nuevo hallazgo</a>
+        <a href="{{ url_for('sector.nuevo_sector', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📐 Nuevo sector</a>
+        <a href="{{ url_for('fase.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📋 Nueva fase</a>
+        <a href="{{ url_for('evento.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📅 Nuevo evento</a>
+        {% endif %}
+        <a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">🧱 Unidades Estratigráficas</a>
+        <a href="{{ url_for('ue.harris', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📊 Matriz de Harris</a>
+        <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">🧪 Muestras</a>
+        <a href="{{ url_for('campana.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">⛺ Campañas</a>
+        <a href="{{ url_for('evento.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📅 Eventos</a>
+      </div>
+    </div>
+
+    <!-- Sectores -->
+    {% if sectores %}
+    <div class="aside-card">
+      <div class="card-header-row">
+        <h4>Sectores</h4>
+        <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}" class="link-sm">Ver todos</a>
+      </div>
+      <ul class="tag-list">
+        {% for s in sectores %}
+        <li><a href="{{ url_for('sector.detalle', sector_id=s.id) }}" class="tag" style="border-left: 3px solid {{ s.color or '#6366F1' }}">{{ s.nombre }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Fases -->
+    {% if fases %}
+    <div class="aside-card">
+      <div class="card-header-row">
+        <h4>Fases</h4>
+        <a href="{{ url_for('fase.listar', yacimiento_id=yacimiento.id) }}" class="link-sm">Ver todas</a>
+      </div>
+      <ul class="fase-list">
+        {% for f in fases %}
+        <li class="fase-item">
+          <span class="fase-estado fase-{{ f.estado }}">{{ f.estado }}</span>
+          <span>{{ f.nombre }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <!-- Invitaciones (solo propietario) -->
+    {% if es_propietario %}
+    <div class="aside-card">
+      <h4>Equipo</h4>
+      <a href="{{ url_for('invitacion.gestionar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">👥 Gestionar invitaciones</a>
+      <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">+ Invitar colaborador</a>
+    </div>
+
+    <div class="aside-card danger-zone">
+      <h4 class="text-danger">Zona de peligro</h4>
+      <form action="{{ url_for('yacimiento.eliminar', yacimiento_id=yacimiento.id) }}" method="POST"
+            onsubmit="return confirm('¿Eliminar el yacimiento «{{ yacimiento.nombre }}» y todos sus datos?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger btn-block">🗑️ Eliminar yacimiento</button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titulo %}Invitar Colaborador — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <a href="{{ url_for('invitacion.gestionar', yacimiento_id=yacimiento.id) }}">Invitaciones</a> ›
+  <span>Nueva</span>
+</nav>
+
+<div class="page-header">
+  <h1>👥 Invitar colaborador</h1>
+  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
+</div>
+
+<div class="form-container">
+  <div class="form-card info-banner">
+    <h4>ℹ️ Sobre los roles</h4>
+    <dl class="roles-info">
+      <dt>Visualizador</dt><dd>Solo puede ver hallazgos y datos del yacimiento.</dd>
+      <dt>Editor</dt><dd>Puede editar hallazgos y sectores existentes.</dd>
+      <dt>Colaborador</dt><dd>Puede crear y editar hallazgos, sectores y fases.</dd>
+      <dt>Asistente</dt><dd>Acceso completo excepto gestión de invitaciones.</dd>
+    </dl>
+  </div>
+
+  <form method="POST" novalidate>
+    {{ formulario.hidden_tag() }}
+
+    <div class="form-card">
+      <div class="form-group">
+        {{ formulario.email.label(class="form-label required") }}
+        {{ formulario.email(class="form-control" + (" is-invalid" if formulario.email.errors else ""),
+            placeholder="correo@ejemplo.com", type="email",
+            autocomplete="off") }}
+        {% for e in formulario.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        <div class="form-hint">El usuario debe tener una cuenta en ArqueoTrack.</div>
+      </div>
+
+      <div class="form-group">
+        {{ formulario.rol.label(class="form-label required") }}
+        {{ formulario.rol(class="form-control" + (" is-invalid" if formulario.rol.errors else "")) }}
+        {% for e in formulario.rol.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ formulario.mensaje.label(class="form-label") }}
+        {{ formulario.mensaje(class="form-control", rows=3, placeholder="Mensaje opcional para el invitado…") }}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('invitacion.gestionar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Enviar invitación</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titulo %}Instituciones - ArqueoTrack{% endblock %}
+
+{% block contenido %}
+<div class="page-header">
+  <h1>🏛️ Instituciones</h1>
+  <a href="{{ url_for('institucion.nueva') }}" class="btn btn-primary">+ Nueva institución</a>
+</div>
+
+<!-- Filtros -->
+<form method="get" class="filtros-form card">
+  <div class="filtros-row">
+    <input type="text" name="q" value="{{ query }}" placeholder="Buscar institución…" class="form-control">
+    <select name="tipo" class="form-control">
+      <option value="">Todos los tipos</option>
+      {% for t in ['universidad','museo','empresa','ong','gobierno','investigacion','otro'] %}
+      <option value="{{ t }}" {% if tipo == t %}selected{% endif %}>{{ t | capitalize }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-secondary">Filtrar</button>
+    {% if query or tipo or pais %}<a href="{{ url_for('institucion.listar') }}" class="btn btn-outline">Limpiar</a>{% endif %}
+  </div>
+</form>
+
+<!-- Grid de instituciones -->
+{% if instituciones %}
+<div class="grid-instituciones">
+  {% for inst in instituciones %}
+  <div class="card-institucion {% if inst in mis_instituciones %}mi-institucion{% endif %}">
+    {% if inst.logo_url %}
+    <img src="{{ inst.logo_url }}" alt="{{ inst.nombre }}" class="inst-logo">
+    {% else %}
+    <div class="inst-logo-placeholder">🏛️</div>
+    {% endif %}
+    <div class="inst-info">
+      <h3><a href="{{ url_for('institucion.detalle', inst_id=inst.id) }}">{{ inst.nombre }}</a></h3>
+      <span class="badge badge-tipo">{{ inst.tipo }}</span>
+      {% if inst.verificada %}<span class="badge badge-success">✓ Verificada</span>{% endif %}
+      {% if inst.pais %}<span class="inst-pais">📍 {{ inst.pais }}{% if inst.ciudad %}, {{ inst.ciudad }}{% endif %}</span>{% endif %}
+      {% if inst.descripcion %}<p class="inst-desc">{{ inst.descripcion | truncate(120) }}</p>{% endif %}
+      <div class="inst-stats">
+        <span>👥 {{ inst.total_miembros }} miembros</span>
+        <span>🗺️ {{ inst.total_yacimientos }} yacimientos</span>
+      </div>
+    </div>
+    {% if inst in mis_instituciones %}<div class="mi-inst-badge">Mi institución</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No se encontraron instituciones{% if query %} para "{{ query }}"{% endif %}.</p>
+  <a href="{{ url_for('institucion.nueva') }}" class="btn btn-primary">Registrar tu institución</a>
+</div>
+{% endif %}
+{% endblock %}

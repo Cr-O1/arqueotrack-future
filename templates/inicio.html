@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio — ArqueoTrack{% endblock %}
+{% block contenido %}
+
+<div class="page-header">
+  <div>
+    <h1>Hola, {{ current_user.nombre }} 👋</h1>
+    <p class="text-muted">Panel de control de tus excavaciones</p>
+  </div>
+  <a href="{{ url_for('yacimiento.nuevo_yacimiento') }}" class="btn btn-primary">+ Nuevo yacimiento</a>
+</div>
+
+<!-- Estadísticas globales -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-number">{{ total_yacimientos | default(0) }}</span>
+    <span class="stat-label">🗺️ Yacimientos</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">{{ total_hallazgos | default(0) }}</span>
+    <span class="stat-label">🏺 Hallazgos</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">{{ total_sectores | default(0) }}</span>
+    <span class="stat-label">📐 Sectores</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">{{ total_colaboradores | default(0) }}</span>
+    <span class="stat-label">👥 Colaboradores</span>
+  </div>
+</div>
+
+<!-- Mis yacimientos -->
+<section class="section">
+  <div class="section-header">
+    <h2>Mis yacimientos</h2>
+    <a href="{{ url_for('yacimiento.nuevo_yacimiento') }}" class="btn btn-sm btn-outline">+ Añadir</a>
+  </div>
+
+  {% if yacimientos %}
+  <div class="yacimientos-grid">
+    {% for yac in yacimientos %}
+    <div class="yac-card">
+      <div class="yac-card-header">
+        <h3><a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}">{{ yac.nombre }}</a></h3>
+        <span class="badge badge-primary">Propietario</span>
+      </div>
+      {% if yac.ubicacion %}
+      <p class="yac-location">📍 {{ yac.ubicacion }}</p>
+      {% endif %}
+      {% if yac.descripcion %}
+      <p class="yac-desc">{{ yac.descripcion | truncate(100) }}</p>
+      {% endif %}
+      <div class="yac-stats">
+        <span>🏺 {{ yac.hallazgos.count() }} hallazgos</span>
+        <span>📐 {{ yac.sectores.count() }} sectores</span>
+        <span>📋 {{ yac.fases.count() }} fases</span>
+      </div>
+      <div class="yac-actions">
+        <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}" class="btn btn-sm btn-primary">Ver detalle</a>
+        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yac.id) }}" class="btn btn-sm btn-outline">+ Hallazgo</a>
+        <a href="{{ url_for('ue.listar', yacimiento_id=yac.id) }}" class="btn btn-sm btn-outline">UEs</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p class="empty-icon">🗺️</p>
+    <h3>Sin yacimientos todavía</h3>
+    <p>Crea tu primer yacimiento arqueológico para comenzar a registrar hallazgos.</p>
+    <a href="{{ url_for('yacimiento.nuevo_yacimiento') }}" class="btn btn-primary">Crear yacimiento</a>
+  </div>
+  {% endif %}
+</section>
+
+<!-- Yacimientos en los que colaboro -->
+{% if yacimientos_colaborando %}
+<section class="section">
+  <h2>Colaborando en</h2>
+  <div class="yacimientos-grid">
+    {% for yac in yacimientos_colaborando %}
+    <div class="yac-card yac-card-collab">
+      <div class="yac-card-header">
+        <h3><a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}">{{ yac.nombre }}</a></h3>
+        <span class="badge badge-secondary">Colaborador</span>
+      </div>
+      {% if yac.ubicacion %}
+      <p class="yac-location">📍 {{ yac.ubicacion }}</p>
+      {% endif %}
+      <div class="yac-actions">
+        <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}" class="btn btn-sm btn-outline">Ver detalle</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- Accesos rápidos -->
+<section class="section">
+  <h2>Accesos rápidos</h2>
+  <div class="quick-links">
+    <a href="{{ url_for('main.buscar_codigo') }}" class="quick-link">
+      <span>🔍</span>
+      <span>Buscar por código</span>
+    </a>
+    <a href="{{ url_for('invitacion.pendientes') }}" class="quick-link">
+      <span>📨</span>
+      <span>Invitaciones pendientes</span>
+    </a>
+    <a href="{{ url_for('institucion.listar') }}" class="quick-link">
+      <span>🏛️</span>
+      <span>Instituciones</span>
+    </a>
+    <a href="{{ url_for('main.perfil') }}" class="quick-link">
+      <span>👤</span>
+      <span>Mi perfil</span>
+    </a>
+  </div>
+</section>
+
+{% endblock %}

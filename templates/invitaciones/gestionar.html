@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block titulo %}Gestionar Invitaciones — {{ yacimiento.nombre }}{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
+  <span>Invitaciones</span>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1>👥 Gestionar equipo</h1>
+    <p class="text-muted">{{ invitaciones | length }} invitación{{ 'es' if invitaciones | length != 1 }}</p>
+  </div>
+  <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Invitar colaborador</a>
+</div>
+
+{% if invitaciones %}
+<div class="table-container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Enviada</th>
+        <th>Mensaje</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in invitaciones %}
+      <tr>
+        <td>
+          {% if inv.invitado %}
+          <strong>{{ inv.invitado.nombre_usuario }}</strong><br>
+          <small class="text-muted">{{ inv.invitado.nombre }} {{ inv.invitado.apellidos }}</small>
+          {% else %}
+          <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        <td>{{ inv.email }}</td>
+        <td><span class="badge badge-secondary">{{ inv.rol }}</span></td>
+        <td>
+          <span class="badge badge-{{ 'success' if inv.estado == 'aceptada' else 'warning' if inv.estado == 'pendiente' else 'error' }}">
+            {{ inv.estado }}
+          </span>
+        </td>
+        <td>
+          {{ inv.fecha_envio.strftime('%d/%m/%Y') if inv.fecha_envio else '—' }}
+          {% if inv.fecha_respuesta %}
+          <br><small class="text-muted">Resp: {{ inv.fecha_respuesta.strftime('%d/%m/%Y') }}</small>
+          {% endif %}
+        </td>
+        <td>{{ inv.mensaje | truncate(50) if inv.mensaje else '—' }}</td>
+        <td>
+          {% if inv.estado == 'pendiente' %}
+          <form action="{{ url_for('invitacion.revocar', invitacion_id=inv.id) }}" method="POST" style="display:inline"
+                onsubmit="return confirm('¿Revocar esta invitación?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-danger">Revocar</button>
+          </form>
+          {% elif inv.estado == 'aceptada' %}
+          <form action="{{ url_for('invitacion.revocar', invitacion_id=inv.id) }}" method="POST" style="display:inline"
+                onsubmit="return confirm('¿Eliminar acceso de {{ inv.invitado.nombre_usuario if inv.invitado else inv.email }}?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline">Retirar acceso</button>
+          </form>
+          {% else %}
+          <span class="text-muted small">Rechazada</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p class="empty-icon">👥</p>
+  <h3>Sin invitaciones todavía</h3>
+  <p>Invita a colaboradores para trabajar juntos en este yacimiento.</p>
+  <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Invitar primer colaborador</a>
+</div>
+{% endif %}
+
+{% endblock %}

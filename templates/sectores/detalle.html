@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block titulo %}{{ sector.nombre }} — ArqueoTrack{% endblock %}
+{% block contenido %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=sector.yacimiento_id) }}">{{ sector.yacimiento.nombre }}</a> ›
+  <a href="{{ url_for('sector.listar', yacimiento_id=sector.yacimiento_id) }}">Sectores</a> ›
+  <span>{{ sector.nombre }}</span>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 style="border-left: 5px solid {{ sector.color or '#6366F1' }}; padding-left:12px">
+      📐 {{ sector.nombre }}
+    </h1>
+    <p class="text-muted">{{ sector.yacimiento.nombre }}</p>
+  </div>
+  <a href="{{ url_for('sector.editar', sector_id=sector.id) }}" class="btn btn-outline">✏️ Editar sector</a>
+</div>
+
+<div class="detalle-layout">
+  <div class="detalle-main">
+
+    {% if sector.descripcion %}
+    <div class="info-card">
+      <h3>Descripción</h3>
+      <p>{{ sector.descripcion }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Hallazgos del sector -->
+    <div class="info-card">
+      <div class="card-header-row">
+        <h3>Hallazgos ({{ sector.hallazgos.count() }})</h3>
+        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=sector.yacimiento_id) }}" class="btn btn-sm btn-primary">+ Añadir</a>
+      </div>
+      {% if sector.hallazgos.count() > 0 %}
+      <table class="table">
+        <thead>
+          <tr><th>Código</th><th>Tipo</th><th>Material</th><th>Datación</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for h in sector.hallazgos %}
+          <tr>
+            <td><code>{{ h.codigo_acceso }}</code></td>
+            <td>{{ h.tipo or '—' }}</td>
+            <td>{{ h.material or '—' }}</td>
+            <td>{{ h.datacion or '—' }}</td>
+            <td><a href="{{ url_for('hallazgo.detalle', hallazgo_id=h.id) }}" class="btn btn-xs btn-outline">Ver</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted">Sin hallazgos en este sector.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div class="detalle-aside">
+    <div class="aside-card">
+      <h4>Datos del sector</h4>
+      <dl class="data-list">
+        {% if sector.area %}
+        <dt>Área</dt><dd>{{ sector.area | int }} m²</dd>
+        {% endif %}
+        {% if sector.lat and sector.lng %}
+        <dt>Coordenadas</dt><dd>{{ "%.5f" | format(sector.lat) }}, {{ "%.5f" | format(sector.lng) }}</dd>
+        {% endif %}
+        <dt>Total hallazgos</dt><dd>{{ sector.hallazgos.count() }}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
