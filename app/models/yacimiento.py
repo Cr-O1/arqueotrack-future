@@ -66,6 +66,27 @@ class Yacimiento(db.Model):
         db.Index('idx_yacimientos_institucion', 'institucion_id'),
     )
 
+    def __init__(self, **kwargs):
+        if 'propietario_id' in kwargs and 'user_id' not in kwargs:
+            kwargs['user_id'] = kwargs.pop('propietario_id')
+
+        latitud = kwargs.pop('latitud', None)
+        longitud = kwargs.pop('longitud', None)
+        if latitud is not None and 'lat' not in kwargs:
+            kwargs['lat'] = latitud
+        if longitud is not None and 'lng' not in kwargs:
+            kwargs['lng'] = longitud
+
+        municipio = kwargs.pop('municipio', None)
+        pais = kwargs.pop('pais', None)
+        if (municipio or pais) and not kwargs.get('ubicacion'):
+            kwargs['ubicacion'] = ', '.join(filter(None, [municipio, pais]))
+
+        # Compatibilidad con argumentos legacy no persistidos en v2/v3
+        kwargs.pop('estado', None)
+
+        super().__init__(**kwargs)
+
     @property
     def esta_activo(self):
         return self.fecha_fin is None

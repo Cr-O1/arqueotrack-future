@@ -11,9 +11,11 @@ log = structlog.get_logger(__name__)
 class CampanaService:
 
     @staticmethod
-    def crear(yacimiento_id: int, director_id: int, datos: dict) -> Campana:
-        anio = datos.get('anio')
-        nombre = datos.get('nombre')
+    def crear(yacimiento_id: int, director_id: int, datos: dict = None, **kwargs) -> Campana:
+        payload = dict(datos or {})
+        payload.update(kwargs)
+        anio = payload.get('anio')
+        nombre = payload.get('nombre')
         existe = Campana.query.filter_by(
             yacimiento_id=yacimiento_id, anio=anio, nombre=nombre
         ).first()
@@ -21,15 +23,19 @@ class CampanaService:
             raise ValueError(f'Ya existe una campaña "{nombre}" en {anio} para este yacimiento.')
 
         log.info("Creando campaña", yacimiento_id=yacimiento_id, anio=anio)
-        campana = Campana(yacimiento_id=yacimiento_id, director_id=director_id, **datos)
+        campana = Campana(yacimiento_id=yacimiento_id, director_id=director_id, **payload)
         db.session.add(campana)
         db.session.commit()
         log.info("Campaña creada", campana_id=campana.id)
         return campana
 
     @staticmethod
-    def actualizar(campana: Campana, datos: dict) -> Campana:
-        for campo, valor in datos.items():
+    def actualizar(campana: Campana | int, datos: dict = None, **kwargs) -> Campana:
+        if isinstance(campana, int):
+            campana = Campana.query.get_or_404(campana)
+        payload = dict(datos or {})
+        payload.update(kwargs)
+        for campo, valor in payload.items():
             if hasattr(campana, campo):
                 setattr(campana, campo, valor)
         db.session.commit()
@@ -56,7 +62,9 @@ class CampanaService:
             db.session.commit()
 
     @staticmethod
-    def cambiar_estado(campana: Campana, nuevo_estado: str) -> Campana:
+    def cambiar_estado(campana: Campana | int, nuevo_estado: str) -> Campana:
+        if isinstance(campana, int):
+            campana = Campana.query.get_or_404(campana)
         estados_validos = ('planificada', 'en_curso', 'finalizada', 'publicada')
         if nuevo_estado not in estados_validos:
             raise ValueError(f'Estado inválido: {nuevo_estado}')
@@ -75,5 +83,6 @@ class CampanaService:
             'total_hallazgos': campana.total_hallazgos,
             'total_ues': campana.total_ues,
             'duracion_dias': campana.duracion_dias,
+            'total_muestras': campana.unidades_estratigraficas.count(),
             'total_miembros': campana.equipo.count(),
         }

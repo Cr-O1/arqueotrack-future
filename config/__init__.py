@@ -68,8 +68,10 @@ class ProductionConfig(BaseConfig):
 
     # PostgreSQL obligatorio en producción
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("DATABASE_URL es obligatoria en producción.")
+
+    def __init__(self):
+        if not self.SQLALCHEMY_DATABASE_URI:
+            raise ValueError("DATABASE_URL es obligatoria en producción.")
 
     # Pool de conexiones para PostgreSQL
     SQLALCHEMY_ENGINE_OPTIONS = {

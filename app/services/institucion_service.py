@@ -25,15 +25,17 @@ JERARQUIA_ROLES = [
 class InstitucionService:
 
     @staticmethod
-    def crear(nombre: str, tipo: str, datos: dict, fundador_id: int) -> Institucion:
+    def crear(nombre: str, tipo: str, fundador_id: int, datos: dict = None, **kwargs) -> Institucion:
         """
         Crea una nueva institución y designa al creador como director_general.
         """
         if Institucion.query.filter_by(nombre=nombre).first():
             raise ValueError(f'Ya existe una institución con el nombre "{nombre}".')
 
+        payload = dict(datos or {})
+        payload.update(kwargs)
         log.info("Creando institución", nombre=nombre, tipo=tipo, fundador_id=fundador_id)
-        inst = Institucion(nombre=nombre, tipo=tipo, **datos)
+        inst = Institucion(nombre=nombre, tipo=tipo, **payload)
         db.session.add(inst)
         db.session.flush()  # obtener ID antes de crear membresía
 
@@ -99,9 +101,11 @@ class InstitucionService:
             db.session.commit()
 
     @staticmethod
-    def verificar(inst: Institucion) -> Institucion:
+    def verificar(inst: Institucion | int) -> Institucion:
         """Verifica administrativamente una institución."""
         from datetime import datetime
+        if isinstance(inst, int):
+            inst = Institucion.query.get_or_404(inst)
         inst.verificada = True
         inst.fecha_verificacion = datetime.utcnow()
         db.session.commit()

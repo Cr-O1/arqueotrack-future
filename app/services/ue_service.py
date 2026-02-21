@@ -11,9 +11,16 @@ log = structlog.get_logger(__name__)
 class UEService:
 
     @staticmethod
-    def crear(yacimiento_id: int, registrado_por_id: int, datos: dict) -> UnidadEstratigrafica:
+    def crear(yacimiento_id: int, registrado_por_id: int = None, datos: dict = None, **kwargs) -> UnidadEstratigrafica:
         """Crea una nueva UE con número autoasignado si no se especifica."""
-        numero_ue = datos.pop('numero_ue', None)
+        payload = dict(datos or {})
+        payload.update(kwargs)
+        if registrado_por_id is None:
+            registrado_por_id = payload.pop('registrada_por_id', None)
+        else:
+            payload.pop('registrada_por_id', None)
+
+        numero_ue = payload.pop('numero_ue', None)
         if numero_ue is None:
             # Autoasignar el siguiente número disponible en el yacimiento
             ultimo = (UnidadEstratigrafica.query
@@ -33,7 +40,7 @@ class UEService:
             yacimiento_id=yacimiento_id,
             numero_ue=numero_ue,
             registrado_por_id=registrado_por_id,
-            **datos,
+            **payload,
         )
         db.session.add(ue)
         db.session.commit()
@@ -42,8 +49,12 @@ class UEService:
         return ue
 
     @staticmethod
-    def actualizar(ue: UnidadEstratigrafica, datos: dict) -> UnidadEstratigrafica:
-        for campo, valor in datos.items():
+    def actualizar(ue: UnidadEstratigrafica | int, datos: dict = None, **kwargs) -> UnidadEstratigrafica:
+        if isinstance(ue, int):
+            ue = UnidadEstratigrafica.query.get_or_404(ue)
+        payload = dict(datos or {})
+        payload.update(kwargs)
+        for campo, valor in payload.items():
             if hasattr(ue, campo):
                 setattr(ue, campo, valor)
         db.session.commit()
@@ -51,7 +62,9 @@ class UEService:
         return ue
 
     @staticmethod
-    def eliminar(ue: UnidadEstratigrafica) -> None:
+    def eliminar(ue: UnidadEstratigrafica | int) -> None:
+        if isinstance(ue, int):
+            ue = UnidadEstratigrafica.query.get_or_404(ue)
         yacimiento_id = ue.yacimiento_id
         log.warning("Eliminando UE", ue_id=ue.id, numero_ue=ue.numero_ue)
         db.session.delete(ue)
@@ -59,10 +72,13 @@ class UEService:
         cache.delete(f'harris_{yacimiento_id}')
 
     @staticmethod
-    def marcar_excavada(ue: UnidadEstratigrafica, fecha_fin=None) -> UnidadEstratigrafica:
+    def marcar_excavada(ue: UnidadEstratigrafica | int, fecha_inicio=None, fecha_fin=None) -> UnidadEstratigrafica:
         from datetime import date
+        if isinstance(ue, int):
+            ue = UnidadEstratigrafica.query.get_or_404(ue)
         ue.excavada = True
-        ue.fecha_fin_excavacion = fecha_fin or date.today()
+        ue.fecha_inicio_excavacion = fecha_inicio or ue.fecha_inicio_excavacion
+        ue.fecha_fin_excavacion = fecha_fin or ue.fecha_fin_excavacion or date.today()
         db.session.commit()
         return ue
 

@@ -38,6 +38,10 @@ class UsuarioInstitucion(db.Model):
         db.Index('idx_ui_institucion', 'institucion_id'),
     )
 
+    @property
+    def rol(self):
+        return self.rol_institucional
+
     def __repr__(self):
         return f'<UsuarioInstitucion {self.usuario_id} → {self.institucion_id} [{self.rol_institucional}]>'
 
