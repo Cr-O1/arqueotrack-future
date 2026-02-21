@@ -10,6 +10,18 @@ from app.utils.constants import tiene_permiso_rol_institucional
 log = structlog.get_logger(__name__)
 
 
+JERARQUIA_ROLES = [
+    'director_general',
+    'director_proyecto',
+    'arqueologo_senior',
+    'arqueologo_junior',
+    'tecnico_campo',
+    'restaurador',
+    'investigador_externo',
+    'estudiante',
+]
+
+
 class InstitucionService:
 
     @staticmethod

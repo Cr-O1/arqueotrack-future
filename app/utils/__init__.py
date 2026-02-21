@@ -20,7 +20,7 @@ from app.utils.constants import (
     TIPOS_INSTITUCION,
     ESTADOS_CAMPANA,
     PAISES_ES,
-    tiene_permiso_institucional,
+    tiene_permiso_rol_institucional,
     # v3.0
     TIPOS_UE,
     TIPOS_RELACION_UE,
@@ -35,7 +35,7 @@ __all__ = [
     'TIPOS_HALLAZGO', 'ESTADOS_CONSERVACION', 'FASES_PREDEFINIDAS', 'TIPOS_EVENTO',
     'OCUPACIONES', 'ROLES_PERMISOS', 'tiene_permiso_rol',
     'ROLES_INSTITUCIONALES', 'TIPOS_INSTITUCION', 'ESTADOS_CAMPANA', 'PAISES_ES',
-    'tiene_permiso_institucional',
+    'tiene_permiso_rol_institucional',
     'TIPOS_UE', 'TIPOS_RELACION_UE', 'COMPACTACIONES_UE',
     'TIPOS_MUESTRA', 'TIPOS_ANALISIS', 'ESTADOS_MUESTRA',
 ]
