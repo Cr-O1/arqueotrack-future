@@ -133,7 +133,7 @@ PAISES_ES = [
 ]
 
 
-def tiene_permiso_institucional(rol: str, permiso: str) -> bool:
+def tiene_permiso_rol_institucional(rol: str, permiso: str) -> bool:
     """
     Verifica si un rol institucional tiene un permiso.
     El director_general tiene '*' (todos).

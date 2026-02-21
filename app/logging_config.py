@@ -82,6 +82,8 @@ def setup_logging(app: Flask) -> None:
 
     app.logger.info(
         "Logging configurado",
-        format=log_format,
-        level=app.config.get('LOG_LEVEL', 'INFO'),
+        extra={
+            "format": log_format,
+            "level": app.config.get('LOG_LEVEL', 'INFO'),
+        }
     )
