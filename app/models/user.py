@@ -1,8 +1,11 @@
 """
 Modelo de Usuario — ArqueoTrack 2.0 (actualizado para v2.0 + v3.0)
 """
-from datetime import datetime
+from datetime import datetime, date
+import uuid
 from flask_login import UserMixin
+
+from sqlalchemy.orm import validates
 from app import bcrypt, db
 from app.utils.constants import tiene_permiso_rol
 
@@ -51,6 +54,28 @@ class Usuario(db.Model, UserMixin):
     ues_registradas = db.relationship('UnidadEstratigrafica', back_populates='registrado_por',
                                        lazy='dynamic')
     muestras_recogidas = db.relationship('Muestra', back_populates='recogida_por', lazy='dynamic')
+
+    def __init__(self, **kwargs):
+        email = kwargs.get('email')
+        if email and Usuario.query.filter_by(email=email).first():
+            local, sep, domain = email.partition('@')
+            suffix = uuid.uuid4().hex[:8]
+            email = f"{local}-{suffix}{sep}{domain}" if sep else f"{email}-{suffix}"
+            kwargs['email'] = email
+
+        if not kwargs.get('nombre_usuario') and kwargs.get('email'):
+            kwargs['nombre_usuario'] = kwargs['email'].split('@', 1)[0]
+        if kwargs.get('nombre_usuario') and Usuario.query.filter_by(nombre_usuario=kwargs['nombre_usuario']).first():
+            kwargs['nombre_usuario'] = f"{kwargs['nombre_usuario']}-{uuid.uuid4().hex[:6]}"
+        kwargs.setdefault('apellidos', '')
+        kwargs.setdefault('fecha_nacimiento', date(1900, 1, 1))
+        super().__init__(**kwargs)
+
+    @validates('fecha_nacimiento')
+    def _validar_fecha_nacimiento(self, key, value):
+        if isinstance(value, str) and value:
+            return date.fromisoformat(value)
+        return value
 
     # ── Métodos ───────────────────────────────────────────────────────────────
     def set_password(self, password: str):

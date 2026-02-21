@@ -11,12 +11,18 @@ log = structlog.get_logger(__name__)
 class MuestraService:
 
     @staticmethod
-    def crear(yacimiento_id: int, recogida_por_id: int, datos: dict) -> Muestra:
-        log.info("Creando muestra", yacimiento_id=yacimiento_id, tipo=datos.get('tipo'))
+    def crear(yacimiento_id: int, recogida_por_id: int = None, datos: dict = None, **kwargs) -> Muestra:
+        payload = dict(datos or {})
+        payload.update(kwargs)
+        if recogida_por_id is None:
+            recogida_por_id = payload.pop('recogida_por_id', None)
+        else:
+            payload.pop('recogida_por_id', None)
+        log.info("Creando muestra", yacimiento_id=yacimiento_id, tipo=payload.get('tipo'))
         muestra = Muestra(
             yacimiento_id=yacimiento_id,
             recogida_por_id=recogida_por_id,
-            **datos,
+            **payload,
         )
         db.session.add(muestra)
         db.session.commit()
@@ -24,17 +30,23 @@ class MuestraService:
         return muestra
 
     @staticmethod
-    def actualizar(muestra: Muestra, datos: dict) -> Muestra:
-        for campo, valor in datos.items():
+    def actualizar(muestra: Muestra | int, datos: dict = None, **kwargs) -> Muestra:
+        if isinstance(muestra, int):
+            muestra = Muestra.query.get_or_404(muestra)
+        payload = dict(datos or {})
+        payload.update(kwargs)
+        for campo, valor in payload.items():
             if hasattr(muestra, campo):
                 setattr(muestra, campo, valor)
         db.session.commit()
         return muestra
 
     @staticmethod
-    def enviar_a_laboratorio(muestra: Muestra, laboratorio: str,
+    def enviar_a_laboratorio(muestra: Muestra | int, laboratorio: str,
                               numero_laboratorio: str = None) -> Muestra:
         from datetime import datetime
+        if isinstance(muestra, int):
+            muestra = Muestra.query.get_or_404(muestra)
         muestra.estado = 'en_laboratorio'
         muestra.laboratorio = laboratorio
         muestra.numero_laboratorio = numero_laboratorio
@@ -44,15 +56,21 @@ class MuestraService:
         return muestra
 
     @staticmethod
-    def registrar_resultado(muestra_id: int, tipo_analisis: str, datos: dict,
-                             revisor_id: int = None) -> ResultadoAnalisis:
+    def registrar_resultado(muestra_id: int, tipo_analisis: str, datos: dict = None,
+                             revisor_id: int = None, **kwargs) -> ResultadoAnalisis:
         """Registra el resultado de un análisis y actualiza el estado de la muestra."""
+        payload = dict(datos or {})
+        payload.update(kwargs)
+        if revisor_id is None:
+            revisor_id = payload.pop('revisado_por_id', None)
+        else:
+            payload.pop('revisado_por_id', None)
         muestra = Muestra.query.get_or_404(muestra_id)
         resultado = ResultadoAnalisis(
             muestra_id=muestra_id,
             tipo_analisis=tipo_analisis,
             revisor_id=revisor_id,
-            **datos,
+            **payload,
         )
         db.session.add(resultado)
         muestra.estado = 'resultado_disponible'

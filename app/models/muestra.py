@@ -63,6 +63,10 @@ class Muestra(db.Model):
     )
 
     @property
+    def fecha_envio(self):
+        return self.fecha_envio_laboratorio
+
+    @property
     def tiene_resultado(self):
         return self.resultados.count() > 0
 

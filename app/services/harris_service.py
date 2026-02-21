@@ -27,7 +27,7 @@ class HarrisService:
 
     @staticmethod
     def añadir_relacion(ue_posterior_id: int, ue_anterior_id: int,
-                        tipo: str = 'cubre', notas: str = None) -> RelacionUE:
+                        tipo: str = 'cubre', notas: str = None, **kwargs) -> RelacionUE:
         """
         Añade una relación estratigráfica.
 
@@ -39,8 +39,9 @@ class HarrisService:
         Raises:
             ValueError: Si la relación crearía un ciclo estratigráfico.
         """
+        tipo = kwargs.pop('tipo_relacion', tipo)
         if ue_posterior_id == ue_anterior_id:
-            raise ValueError('Una UE no puede relacionarse consigo misma.')
+            raise ValueError('Una UE no puede relacionarse con la misma UE.')
 
         # Comprobar que no existe ya
         existente = RelacionUE.query.filter_by(
@@ -140,7 +141,7 @@ class HarrisService:
 
         nodos = [{
             'id': ue.id,
-            'label': f'UE {ue.numero_ue}',
+            'label': f'UE-{ue.numero_ue}',
             'tipo': ue.tipo,
             'descripcion': ue.descripcion or '',
             'color_munsell': ue.color_munsell or '',
@@ -186,7 +187,7 @@ class HarrisService:
         return '\n'.join(lines)
 
     @staticmethod
-    def validar_coherencia(yacimiento_id: int) -> List[str]:
+    def validar_coherencia(yacimiento_id: int):
         """
         Valida la coherencia de la Matriz de Harris.
 
@@ -224,7 +225,7 @@ class HarrisService:
             nums = ', '.join(f'#{ue.numero_ue}' for ue in ues_aisladas)
             errores.append(f'ℹ️ UEs sin relaciones estratigráficas: {nums}')
 
-        return errores
+        return {'tiene_ciclos': any('circulares' in e for e in errores), 'errores': errores}
 
     @staticmethod
     def _crearía_ciclo(yacimiento_id: int, nuevo_posterior_id: int,
