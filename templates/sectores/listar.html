@@ -1,64 +1,180 @@
 {% extends "base.html" %}
-{% block titulo %}Sectores — {{ yacimiento.nombre }}{% endblock %}
-{% block contenido %}
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
-  <span>Sectores</span>
-</nav>
+{% block title %}Sectores - {{ yacimiento.nombre }}{% endblock %}
 
-<div class="page-header">
-  <div>
-    <h1>📐 Sectores</h1>
-    <p class="text-muted">{{ sectores | length }} sector{{ 's' if sectores | length != 1 }} · {{ total_hallazgos }} hallazgos en total</p>
-  </div>
-  {% if puede_crear %}
-  <a href="{{ url_for('sector.nuevo_sector', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Nuevo sector</a>
-  {% endif %}
-</div>
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
 
-{% if sectores %}
-<div class="sectores-grid">
-  {% for s in sectores %}
-  <div class="sector-card" style="border-top: 4px solid {{ s.color or '#6366F1' }}">
-    <div class="sector-card-header">
-      <h3><a href="{{ url_for('sector.detalle', sector_id=s.id) }}">{{ s.nombre }}</a></h3>
-      <span class="sector-color-dot" style="background:{{ s.color or '#6366F1' }}"></span>
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <h1>Sectores del Yacimiento ({{ sectores|length }})</h1>
+            <div class="button-group" style="margin: 0;">
+                {% if puede_crear %}
+                    <a href="{{ url_for('sector.nuevo_sector', yacimiento_id=yacimiento.id) }}" class="btn btn-success">➕ Nuevo Sector</a>
+                {% endif %}
+                {% if sectores %}
+                    <a href="{{ url_for('sector.mapa_sectores', yacimiento_id=yacimiento.id) }}" class="btn btn-info">🗺️ Ver Mapa</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <h2 style="color: var(--primary-color); border: none; margin-top: 1rem;">{{ yacimiento.nombre }}</h2>
+
+        {% if sectores %}
+            <!-- Estadísticas -->
+            <div class="stats-grid" style="margin: 2rem 0;">
+                <div class="stat-card">
+                    <h3>{{ sectores|length }}</h3>
+                    <p>Total Sectores</p>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--success-color), #059669);">
+                    <h3>{{ sectores|selectattr('polygon_geojson')|list|length }}</h3>
+                    <p>Con Perímetro Definido</p>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #2563eb);">
+                    <h3>{{ total_hallazgos }}</h3>
+                    <p>Hallazgos Totales</p>
+                </div>
+
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--warning-color), #f59e0b);">
+                    <h3>
+                        {% set total_area = sectores|sum(attribute='area', start=0) %}
+                        {% if total_area >= 10000 %}
+                            {{ "%.2f"|format(total_area / 10000) }} ha
+                        {% else %}
+                            {{ "%.0f"|format(total_area) }} m²
+                        {% endif %}
+                    </h3>
+                    <p>Área Total</p>
+                </div>
+            </div>
+
+            <!-- Lista de sectores -->
+            <div class="yacimientos-grid" style="margin-top: 2rem;">
+                {% for sector in sectores %}
+                    <div class="yacimiento-card" style="border-left-color: {{ sector.color or '#6366f1' }};">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <h3 style="color: {{ sector.color or '#6366f1' }}; margin: 0;">{{ sector.nombre }}</h3>
+                            <span class="badge" style="background: {{ sector.color or '#6366f1' }}; color: white;">
+                                {{ sector.total_hallazgos }} hallazgos
+                            </span>
+                        </div>
+
+                        {% if sector.descripcion %}
+                            <p style="color: var(--dark-secondary); margin: 1rem 0;">{{ sector.descripcion }}</p>
+                        {% endif %}
+
+                        <div class="card-info">
+                            {% if sector.area %}
+                                <p>
+                                    <strong>Área:</strong> 
+                                    {% if sector.area >= 10000 %}
+                                        {{ "%.2f"|format(sector.area / 10000) }} ha ({{ "%.0f"|format(sector.area) }} m²)
+                                    {% else %}
+                                        {{ "%.2f"|format(sector.area) }} m²
+                                    {% endif %}
+                                    {% if sector.polygon_geojson %}
+                                        <span style="margin-left: 0.5rem; padding: 0.15rem 0.4rem; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 0.75rem;">Calculada</span>
+                                    {% endif %}
+                                </p>
+                            {% endif %}
+
+                            {% if sector.lat and sector.lng %}
+                                <p>
+                                    <strong>GPS:</strong> 
+                                    <span style="font-family: monospace; font-size: 0.85rem;">
+                                        {{ "%.4f"|format(sector.lat) }}, {{ "%.4f"|format(sector.lng) }}
+                                    </span>
+                                </p>
+                            {% endif %}
+
+                            <p>
+                                <strong>Color en mapa:</strong>
+                                <span style="display: inline-block; width: 20px; height: 20px; background: {{ sector.color or '#6366f1' }}; border-radius: 4px; vertical-align: middle; border: 2px solid var(--border-color);"></span>
+                            </p>
+
+                            {% if sector.polygon_geojson %}
+                                <p style="color: var(--success-color); font-size: var(--font-sm); margin-top: 0.5rem;">
+                                    ✓ Perímetro definido
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-actions">
+                            <a href="{{ url_for('sector.detalle', sector_id=sector.id) }}" class="btn">Ver Detalles</a>
+                            {% if puede_editar_sectores %}
+                                <a href="{{ url_for('sector.editar', sector_id=sector.id) }}" class="btn btn-secondary">Editar</a>
+                            {% endif %}
+                            {% if puede_eliminar_sectores %}
+                                <form method="POST" action="{{ url_for('sector.eliminar', sector_id=sector.id) }}"
+                                      style="display: inline;" 
+                                      onsubmit="return confirm('¿Eliminar sector \"{{ sector.nombre }}\"? Los hallazgos quedarán sin asignar.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 3rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                <div style="font-size: 4rem; color: var(--gray-400); margin-bottom: 1rem;">📍</div>
+                <h3>No hay sectores registrados</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">Divide el yacimiento en sectores para organizar mejor los hallazgos</p>
+                {% if puede_crear %}
+                    <a href="{{ url_for('sector.nuevo_sector', yacimiento_id=yacimiento.id) }}" class="btn btn-success btn-lg">
+                        ➕ Crear Primer Sector
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}" class="btn btn-secondary" style="margin-top: 2rem;">← Volver al Yacimiento</a>
     </div>
-    {% if s.descripcion %}
-    <p class="sector-desc">{{ s.descripcion | truncate(80) }}</p>
+
+    <!-- Mapa integrado -->
+    {% if sectores_json %}
+        <div class="card" style="margin-top: 2rem;">
+            <h2 style="margin-bottom: 1rem;">Mapa de Sectores</h2>
+            <p style="color: var(--gray); margin-bottom: 1.5rem;">Vista previa de la distribución de sectores</p>
+            <div id="sectores-map" style="height: 500px; border-radius: var(--border-radius-lg);"></div>
+            <a href="{{ url_for('sector.mapa_sectores', yacimiento_id=yacimiento.id) }}" class="btn btn-info" style="margin-top: 1rem;">
+                Ver Mapa Completo con Hallazgos
+            </a>
+        </div>
     {% endif %}
-    <div class="sector-stats">
-      <span>🏺 {{ s.total_hallazgos }} hallazgos</span>
-      {% if s.area %}
-      <span>📏 {{ s.area | int }} m²</span>
-      {% endif %}
-    </div>
-    <div class="card-actions">
-      <a href="{{ url_for('sector.detalle', sector_id=s.id) }}" class="btn btn-sm btn-outline">Ver</a>
-      {% if puede_editar_sectores %}
-      <a href="{{ url_for('sector.editar', sector_id=s.id) }}" class="btn btn-sm btn-outline">Editar</a>
-      {% endif %}
-      {% if puede_eliminar_sectores %}
-      <form action="{{ url_for('sector.eliminar', sector_id=s.id) }}" method="POST" style="display:inline"
-            onsubmit="return confirm('¿Eliminar el sector «{{ s.nombre }}»?')">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
-      </form>
-      {% endif %}
-    </div>
-  </div>
-  {% endfor %}
 </div>
-{% else %}
-<div class="empty-state">
-  <p class="empty-icon">📐</p>
-  <h3>Sin sectores</h3>
-  <p>Divide el yacimiento en sectores para organizar mejor los hallazgos.</p>
-  {% if puede_crear %}
-  <a href="{{ url_for('sector.nuevo_sector', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Crear primer sector</a>
-  {% endif %}
-</div>
-{% endif %}
+{% endblock %}
 
+{% block extra_scripts %}
+{% if sectores_json %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const yacimiento = {
+            lat: {{ yacimiento.lat or 40.4168 }},
+            lng: {{ yacimiento.lng or -3.7038 }},
+            nombre: "{{ yacimiento.nombre }}",
+            polygon_geojson: {{ yacimiento.polygon_geojson|tojson|safe if yacimiento.polygon_geojson else 'null' }}
+        };
+
+        const sectores = {{ sectores_json|tojson|safe }};
+
+        // Agregar polygon_geojson a cada sector si existe
+        {% for sector in sectores %}
+        sectores[{{ loop.index0 }}].polygon_geojson = {{ sector.polygon_geojson|tojson|safe if sector.polygon_geojson else 'null' }};
+        {% endfor %}
+
+        initSectoresMap(yacimiento, sectores, []);
+    });
+    </script>
+{% endif %}
 {% endblock %}

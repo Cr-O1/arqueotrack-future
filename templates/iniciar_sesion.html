@@ -1,34 +1,46 @@
 {% extends "base.html" %}
-{% block titulo %}Iniciar Sesión — ArqueoTrack{% endblock %}
-{% block contenido %}
-<div class="auth-container">
-  <div class="auth-card">
-    <div class="auth-header">
-      <h1>🏺 Bienvenido de nuevo</h1>
-      <p>Inicia sesión para acceder a tus yacimientos</p>
+{% block title %}Iniciar Sesión - ArqueoTrack{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Iniciar Sesión</h1>
+        <p>Accede a tu cuenta de ArqueoTrack para gestionar tus yacimientos</p>
+
+        <form method="POST" novalidate>
+            {{ formulario.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="correo_electronico">Correo Electrónico</label>
+                {{ formulario.correo_electronico(class="form-control", type="email", id="correo_electronico", autocomplete="email", autofocus=true) }}
+                {% if formulario.correo_electronico.errors %}
+                    {% for error in formulario.correo_electronico.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="contraseña">Contraseña</label>
+                {{ formulario.contraseña(class="form-control", id="contraseña", autocomplete="current-password") }}
+                {% if formulario.contraseña.errors %}
+                    {% for error in formulario.contraseña.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">
+                {{ formulario.enviar.label.text }}
+            </button>
+        </form>
+
+        <p style="margin-top: 1.5rem; text-align: center; color: var(--gray);">
+            ¿No tienes cuenta? 
+            <a href="/registro" style="color: var(--primary-color); font-weight: 600; text-decoration: none;">
+                Regístrate aquí
+            </a>
+        </p>
     </div>
-
-    <form method="POST" novalidate>
-      {{ formulario.hidden_tag() }}
-
-      <div class="form-group">
-        {{ formulario.correo_electronico.label(class="form-label") }}
-        {{ formulario.correo_electronico(class="form-control" + (" is-invalid" if formulario.correo_electronico.errors else ""), placeholder="correo@ejemplo.com", type="email", autofocus=true) }}
-        {% for e in formulario.correo_electronico.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
-
-      <div class="form-group">
-        {{ formulario.contraseña.label(class="form-label") }}
-        {{ formulario.contraseña(class="form-control" + (" is-invalid" if formulario.contraseña.errors else "")) }}
-        {% for e in formulario.contraseña.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
-
-      <button type="submit" class="btn btn-primary btn-block">{{ formulario.enviar.label.text }}</button>
-    </form>
-
-    <div class="auth-footer">
-      ¿No tienes cuenta? <a href="{{ url_for('auth.registro') }}">Regístrate gratis</a>
-    </div>
-  </div>
 </div>
 {% endblock %}

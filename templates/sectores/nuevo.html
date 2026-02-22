@@ -1,66 +1,281 @@
 {% extends "base.html" %}
-{% block titulo %}Nuevo Sector — {{ yacimiento.nombre }}{% endblock %}
-{% block contenido %}
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
-  <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}">Sectores</a> ›
-  <span>Nuevo</span>
-</nav>
+{% block title %}Nuevo Sector - {{ yacimiento.nombre }}{% endblock %}
 
-<div class="page-header">
-  <h1>📐 Nuevo sector</h1>
-  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<style>
+.map-mode-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.map-mode-tabs button {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--border-color);
+    background: white;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.map-mode-tabs button.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+#marker-map, #sector-polygon-map {
+    height: 400px;
+    border-radius: var(--border-radius);
+    border: 2px solid var(--border-color);
+}
+.hidden {
+    display: none !important;
+}
+#sector-area-display {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-top: 1rem;
+    font-weight: 600;
+    color: #2e7d32;
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Nuevo Sector</h1>
+        <p style="color: var(--primary-color); font-weight: 600;">{{ yacimiento.nombre }}</p>
+
+        <form method="POST">
+            {{ formulario.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="nombre">Código/Nombre del Sector *</label>
+                {{ formulario.nombre(class="form-control", id="nombre", autofocus=true) }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Ej: "A1", "Sector Norte", "Cuadrícula B-3"
+                </small>
+                {% if formulario.nombre.errors %}
+                    {% for error in formulario.nombre.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion">Descripción del Sector</label>
+                {{ formulario.descripcion(class="form-control", id="descripcion", rows=3) }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Describe la ubicación y características del sector
+                </small>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div class="form-group">
+                    <label for="area">Área (metros cuadrados)</label>
+                    {{ formulario.area(class="form-control", id="area", type="number", step="0.01", readonly=true) }}
+                    <small style="color: var(--gray); font-size: var(--font-sm);">
+                        Se calcula automáticamente si dibujas el perímetro
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="color">Color en Mapa</label>
+                    {{ formulario.color(class="form-control", id="color", type="color") }}
+                    <small style="color: var(--gray); font-size: var(--font-sm);">
+                        Color para identificar este sector en el mapa
+                    </small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Ubicación del Sector</label>
+                <p style="color: var(--gray); font-size: var(--font-sm); margin-bottom: 1rem;">
+                    Selecciona cómo quieres definir la ubicación del sector
+                </p>
+
+                <div class="map-mode-tabs">
+                    <button type="button" id="mode-marker" class="active" onclick="switchMapMode('marker')">
+                        📌 Marcador Simple
+                    </button>
+                    <button type="button" id="mode-polygon" onclick="switchMapMode('polygon')">
+                        ✏️ Dibujar Perímetro
+                    </button>
+                </div>
+
+                <div class="map-container">
+                    <div id="marker-map"></div>
+                    <div id="sector-polygon-map" class="hidden"></div>
+                </div>
+
+                {{ formulario.lat(type="hidden", id="lat") }}
+                {{ formulario.lng(type="hidden", id="lng") }}
+                <input type="hidden" id="polygon_geojson" name="polygon_geojson">
+
+                <p id="coords-display" style="margin-top: 0.5rem; color: var(--gray); font-size: var(--font-sm); font-family: monospace;"></p>
+                <div id="sector-area-display"></div>
+
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius); font-size: var(--font-sm);">
+                    <strong>💡 Consejo:</strong> Usa "Dibujar Perímetro" para definir el área exacta del sector. El área se calculará automáticamente en metros cuadrados.
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-success">✓ Crear Sector</button>
+                <a href="/yacimiento/{{ yacimiento.id }}/sectores" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
 </div>
+{% endblock %}
 
-<div class="form-container">
-  <form method="POST" novalidate>
-    {{ formulario.hidden_tag() }}
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/polygon-draw.js') }}"></script>
 
-    <div class="form-card">
-      <h3>Información del sector</h3>
-      <div class="form-group">
-        {{ formulario.nombre.label(class="form-label required") }}
-        {{ formulario.nombre(class="form-control" + (" is-invalid" if formulario.nombre.errors else ""), placeholder="Sector A, Zona norte, Cata 1…") }}
-        {% for e in formulario.nombre.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
-      <div class="form-group">
-        {{ formulario.descripcion.label(class="form-label") }}
-        {{ formulario.descripcion(class="form-control", rows=3, placeholder="Descripción del sector y sus características…") }}
-      </div>
-      <div class="form-group">
-        {{ formulario.color.label(class="form-label") }}
-        <div class="color-picker-row">
-          {{ formulario.color(class="form-control", type="color", style="width:60px; height:40px; padding:2px;") }}
-          <span class="form-hint">Color para identificar el sector en el mapa</span>
-        </div>
-      </div>
-    </div>
+<script>
+let markerMap = null;
+let polygonMapInstance = null;
+let currentMode = 'marker';
 
-    <div class="form-card">
-      <h3>📍 Coordenadas</h3>
-      <div class="form-row">
-        <div class="form-group">
-          {{ formulario.lat.label(class="form-label") }}
-          {{ formulario.lat(class="form-control", step="any", type="number", placeholder="37.9922") }}
-        </div>
-        <div class="form-group">
-          {{ formulario.lng.label(class="form-label") }}
-          {{ formulario.lng(class="form-control", step="any", type="number", placeholder="-1.8641") }}
-        </div>
-      </div>
-      <div class="form-group">
-        {{ formulario.area.label(class="form-label") }}
-        {{ formulario.area(class="form-control", step="any", type="number", placeholder="200") }}
-        <div class="form-hint">Área del sector en m²</div>
-      </div>
-      {{ formulario.polygon_geojson(type="hidden") }}
-    </div>
+const yacLat = {{ yacimiento.lat or 40.4168 }};
+const yacLng = {{ yacimiento.lng or -3.7038 }};
+const sectorColor = document.getElementById('color')?.value || '#6366F1';
 
-    <div class="form-actions">
-      <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
-      <button type="submit" class="btn btn-primary">Crear sector</button>
-    </div>
-  </form>
-</div>
+// Inicializar mapa de marcador
+function initMarkerMap() {
+    const mapElement = document.getElementById('marker-map');
+    if (!mapElement || markerMap) return;
+
+    markerMap = L.map('marker-map').setView([yacLat, yacLng], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(markerMap);
+
+    const marker = L.marker([yacLat, yacLng], {
+        draggable: true,
+        icon: L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background: ' + sectorColor + '; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">S</div>',
+            iconSize: [35, 35],
+            iconAnchor: [17.5, 17.5]
+        })
+    }).addTo(markerMap);
+
+    const latInput = document.getElementById('lat');
+    const lngInput = document.getElementById('lng');
+
+    function updateCoords(lat, lng) {
+        if (latInput) latInput.value = lat.toFixed(6);
+        if (lngInput) lngInput.value = lng.toFixed(6);
+        const display = document.getElementById('coords-display');
+        if (display) display.textContent = `Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+
+    updateCoords(yacLat, yacLng);
+
+    marker.on('dragend', function(e) {
+        const pos = marker.getLatLng();
+        updateCoords(pos.lat, pos.lng);
+    });
+
+    markerMap.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateCoords(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Actualizar color del marcador cuando cambie el color
+    const colorInput = document.getElementById('color');
+    if (colorInput) {
+        colorInput.addEventListener('change', function() {
+            marker.setIcon(L.divIcon({
+                className: 'custom-marker',
+                html: '<div style="background: ' + this.value + '; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">S</div>',
+                iconSize: [35, 35],
+                iconAnchor: [17.5, 17.5]
+            }));
+        });
+    }
+}
+
+// Inicializar mapa de polígono
+function initPolygonMap() {
+    if (polygonMapInstance) return;
+
+    const colorInput = document.getElementById('color');
+    const polygonColor = colorInput?.value || '#6366F1';
+
+    polygonMapInstance = initPolygonDrawMap({
+        mapId: 'sector-polygon-map',
+        polygonInputId: 'polygon_geojson',
+        areaInputId: 'area',
+        areaDisplayId: 'sector-area-display',
+        lat: yacLat,
+        lng: yacLng,
+        zoom: 14,
+        polygonColor: polygonColor
+    });
+}
+
+// Cambiar entre modos
+function switchMapMode(mode) {
+    currentMode = mode;
+
+    const markerBtn = document.getElementById('mode-marker');
+    const polygonBtn = document.getElementById('mode-polygon');
+    const markerMapEl = document.getElementById('marker-map');
+    const polygonMapEl = document.getElementById('sector-polygon-map');
+    const areaDisplay = document.getElementById('sector-area-display');
+    const areaInput = document.getElementById('area');
+    const polygonInput = document.getElementById('polygon_geojson');
+
+    if (mode === 'marker') {
+        markerBtn.classList.add('active');
+        polygonBtn.classList.remove('active');
+        markerMapEl.classList.remove('hidden');
+        polygonMapEl.classList.add('hidden');
+
+        if (areaDisplay) areaDisplay.style.display = 'none';
+        if (polygonInput) polygonInput.value = '';
+        if (areaInput) {
+            areaInput.value = '';
+            areaInput.readOnly = false;
+        }
+
+        if (!markerMap) {
+            setTimeout(initMarkerMap, 100);
+        } else {
+            markerMap.invalidateSize();
+        }
+    } else {
+        markerBtn.classList.remove('active');
+        polygonBtn.classList.add('active');
+        markerMapEl.classList.add('hidden');
+        polygonMapEl.classList.remove('hidden');
+
+        if (areaInput) areaInput.readOnly = true;
+
+        if (!polygonMapInstance) {
+            setTimeout(initPolygonMap, 100);
+        } else {
+            polygonMapInstance.map.invalidateSize();
+        }
+    }
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    initMarkerMap();
+});
+</script>
 {% endblock %}

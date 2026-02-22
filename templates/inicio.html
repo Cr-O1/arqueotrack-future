@@ -1,123 +1,131 @@
 {% extends "base.html" %}
-{% block titulo %}Inicio — ArqueoTrack{% endblock %}
-{% block contenido %}
+{% block title %}Dashboard - ArqueoTrack{% endblock %}
 
-<div class="page-header">
-  <div>
-    <h1>Hola, {{ current_user.nombre }} 👋</h1>
-    <p class="text-muted">Panel de control de tus excavaciones</p>
-  </div>
-  <a href="{{ url_for('yacimiento.nuevo_yacimiento') }}" class="btn btn-primary">+ Nuevo yacimiento</a>
-</div>
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
 
-<!-- Estadísticas globales -->
-<div class="stats-grid">
-  <div class="stat-card">
-    <span class="stat-number">{{ total_yacimientos | default(0) }}</span>
-    <span class="stat-label">🗺️ Yacimientos</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-number">{{ total_hallazgos | default(0) }}</span>
-    <span class="stat-label">🏺 Hallazgos</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-number">{{ total_sectores | default(0) }}</span>
-    <span class="stat-label">📐 Sectores</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-number">{{ total_colaboradores | default(0) }}</span>
-    <span class="stat-label">👥 Colaboradores</span>
-  </div>
-</div>
-
-<!-- Mis yacimientos -->
-<section class="section">
-  <div class="section-header">
-    <h2>Mis yacimientos</h2>
-    <a href="{{ url_for('yacimiento.nuevo_yacimiento') }}" class="btn btn-sm btn-outline">+ Añadir</a>
-  </div>
-
-  {% if yacimientos %}
-  <div class="yacimientos-grid">
-    {% for yac in yacimientos %}
-    <div class="yac-card">
-      <div class="yac-card-header">
-        <h3><a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}">{{ yac.nombre }}</a></h3>
-        <span class="badge badge-primary">Propietario</span>
-      </div>
-      {% if yac.ubicacion %}
-      <p class="yac-location">📍 {{ yac.ubicacion }}</p>
-      {% endif %}
-      {% if yac.descripcion %}
-      <p class="yac-desc">{{ yac.descripcion | truncate(100) }}</p>
-      {% endif %}
-      <div class="yac-stats">
-        <span>🏺 {{ yac.hallazgos.count() }} hallazgos</span>
-        <span>📐 {{ yac.sectores.count() }} sectores</span>
-        <span>📋 {{ yac.fases.count() }} fases</span>
-      </div>
-      <div class="yac-actions">
-        <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}" class="btn btn-sm btn-primary">Ver detalle</a>
-        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yac.id) }}" class="btn btn-sm btn-outline">+ Hallazgo</a>
-        <a href="{{ url_for('ue.listar', yacimiento_id=yac.id) }}" class="btn btn-sm btn-outline">UEs</a>
-      </div>
+{% block content %}
+<div class="main-content">
+    <div class="hero" style="padding: 3rem 2rem;">
+        <h1 style="font-size: var(--font-3xl);">
+            Bienvenido, {{ current_user.nombre }}
+        </h1>
+        <p>Gestiona tus yacimientos arqueológicos de forma profesional</p>
     </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="empty-state">
-    <p class="empty-icon">🗺️</p>
-    <h3>Sin yacimientos todavía</h3>
-    <p>Crea tu primer yacimiento arqueológico para comenzar a registrar hallazgos.</p>
-    <a href="{{ url_for('yacimiento.nuevo_yacimiento') }}" class="btn btn-primary">Crear yacimiento</a>
-  </div>
-  {% endif %}
-</section>
+    {% if yacimientos %}
+    <div class="stats-grid" style="margin: 2rem 0;">
+        <div class="stat-card">
+            <h3>{{ yacimientos|length }}</h3>
+            <p>Yacimientos Registrados</p>
+        </div>
 
-<!-- Yacimientos en los que colaboro -->
-{% if yacimientos_colaborando %}
-<section class="section">
-  <h2>Colaborando en</h2>
-  <div class="yacimientos-grid">
-    {% for yac in yacimientos_colaborando %}
-    <div class="yac-card yac-card-collab">
-      <div class="yac-card-header">
-        <h3><a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}">{{ yac.nombre }}</a></h3>
-        <span class="badge badge-secondary">Colaborador</span>
-      </div>
-      {% if yac.ubicacion %}
-      <p class="yac-location">📍 {{ yac.ubicacion }}</p>
-      {% endif %}
-      <div class="yac-actions">
-        <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yac.id) }}" class="btn btn-sm btn-outline">Ver detalle</a>
-      </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--secondary-color), #7c3aed);">
+            <h3>{{ total_hallazgos }}</h3>
+            <p>Hallazgos Totales</p>
+        </div>
+
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--success-color), #059669);">
+            <h3>{{ yacimientos_activos }}</h3>
+            <p>Excavaciones Activas</p>
+        </div>
+
+        <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #2563eb);">
+            <h3>{{ yacimientos_finalizados }}</h3>
+            <p>Excavaciones Finalizadas</p>
+        </div>
     </div>
-    {% endfor %}
-  </div>
-</section>
+    {% endif %}
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; border: none;">Mis Yacimientos</h2>
+            <a href="/nuevo_yacimiento" class="btn" style="margin: 0;">
+                Nuevo Yacimiento
+            </a>
+        </div>
+
+        {% if yacimientos %}
+            <div class="yacimientos-grid">
+                {% for yacimiento in yacimientos %}
+                <div class="yacimiento-card">
+                    <h3>{{ yacimiento.nombre }}</h3>
+
+                    <div class="card-info">
+                        <p><strong>Ubicación:</strong> {{ yacimiento.ubicacion or 'No especificada' }}</p>
+                        <p><strong>Responsable:</strong> {{ yacimiento.responsable or 'No asignado' }}</p>
+                        <p><strong>Hallazgos:</strong> {{ yacimiento.total_hallazgos }}</p>
+                        <p><strong>Estado:</strong>
+                            {% if yacimiento.fecha_fin %}
+                                <span style="color: var(--success-color); font-weight: 600;">✓ Finalizado</span>
+                            {% else %}
+                                <span style="color: var(--info-color); font-weight: 600;">⏳ En Progreso</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="card-actions">
+                        <a href="/yacimiento/{{ yacimiento.id }}" class="btn">Ver Detalles</a>
+                        <a href="/yacimiento/{{ yacimiento.id }}/fases" class="btn btn-secondary">Fases</a>
+                        <a href="/yacimiento/{{ yacimiento.id }}/timeline" class="btn btn-info">Timeline</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 3rem 1rem; background: var(--light-gray); border-radius: var(--border-radius-lg);">
+                <h3 style="color: var(--dark); margin-bottom: 1rem;">No tienes yacimientos registrados</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">Comienza registrando tu primer yacimiento arqueológico</p>
+                <a href="/nuevo_yacimiento" class="btn" style="font-size: 1.1rem; padding: 0.875rem 2rem;">
+                    Registrar Primer Yacimiento
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    {% if yacimientos_colaborando %}
+    <div class="card" style="margin-top: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; border: none;">Proyectos en Colaboración</h2>
+        </div>
+
+        <div class="yacimientos-grid">
+            {% for yacimiento in yacimientos_colaborando %}
+            <div class="yacimiento-card" style="border-left: 4px solid var(--info-color);">
+                <h3>{{ yacimiento.nombre }}</h3>
+                <div class="card-info">
+                    <p><strong>Ubicación:</strong> {{ yacimiento.ubicacion or 'No especificada' }}</p>
+                    <p><strong>Propietario:</strong> {{ yacimiento.propietario.nombre_usuario }}</p>
+                    <p><strong>Hallazgos:</strong> {{ yacimiento.total_hallazgos }}</p>
+                    <p><strong>Estado:</strong>
+                        {% if yacimiento.fecha_fin %}
+                            <span style="color: var(--success-color); font-weight: 600;">✓ Finalizado</span>
+                        {% else %}
+                            <span style="color: var(--info-color); font-weight: 600;">⏳ En Progreso</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-actions">
+                    <a href="/yacimiento/{{ yacimiento.id }}" class="btn">Ver Detalles</a>
+                    <a href="/yacimiento/{{ yacimiento.id }}/fases" class="btn btn-secondary">Fases</a>
+                    <a href="/yacimiento/{{ yacimiento.id }}/timeline" class="btn btn-info">Timeline</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% if yacimientos_json %}
+    <div class="map-section">
+        <h2>Mapa de Yacimientos</h2>
+        <p style="color: var(--gray); margin-bottom: 1.5rem;">Visualiza todos tus yacimientos en un mapa interactivo</p>
+        <div id="map" data-yacimientos='{{ yacimientos_json|tojson }}'></div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if yacimientos_json %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
 {% endif %}
-
-<!-- Accesos rápidos -->
-<section class="section">
-  <h2>Accesos rápidos</h2>
-  <div class="quick-links">
-    <a href="{{ url_for('main.buscar_codigo') }}" class="quick-link">
-      <span>🔍</span>
-      <span>Buscar por código</span>
-    </a>
-    <a href="{{ url_for('invitacion.pendientes') }}" class="quick-link">
-      <span>📨</span>
-      <span>Invitaciones pendientes</span>
-    </a>
-    <a href="{{ url_for('institucion.listar') }}" class="quick-link">
-      <span>🏛️</span>
-      <span>Instituciones</span>
-    </a>
-    <a href="{{ url_for('main.perfil') }}" class="quick-link">
-      <span>👤</span>
-      <span>Mi perfil</span>
-    </a>
-  </div>
-</section>
-
 {% endblock %}

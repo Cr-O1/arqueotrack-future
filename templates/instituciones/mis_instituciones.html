@@ -1,36 +1,24 @@
 {% extends "base.html" %}
-{% block titulo %}Mis Instituciones - ArqueoTrack{% endblock %}
+{% block title %}Mis Instituciones - ArqueoTrack{% endblock %}
 
-{% block contenido %}
-<div class="page-header">
-  <h1>🏛️ Mis Instituciones</h1>
-  <a href="{{ url_for('institucion.nueva') }}" class="btn btn-primary">+ Nueva</a>
-</div>
-
-{% if instituciones_roles %}
-<div class="grid-instituciones">
-  {% for inst, memb in instituciones_roles %}
-  <div class="card-institucion">
-    <div class="inst-info">
-      <h3><a href="{{ url_for('institucion.detalle', inst_id=inst.id) }}">{{ inst.nombre }}</a></h3>
-      <span class="badge badge-tipo">{{ inst.tipo | capitalize }}</span>
-      {% if inst.verificada %}<span class="badge badge-success">✓</span>{% endif %}
-      <p class="inst-rol">Tu rol: <strong>{{ memb.rol_institucional.replace('_', ' ') | capitalize }}</strong></p>
-      <p class="text-muted">Miembro desde {{ memb.fecha_ingreso.strftime('%d/%m/%Y') }}</p>
-      <div class="inst-stats">
-        <span>👥 {{ inst.total_miembros }}</span>
-        <span>🗺️ {{ inst.total_yacimientos }}</span>
-        <span>⛏️ {{ inst.total_campanas }}</span>
-      </div>
+{% block content %}
+<div class="main-content">
+    <h1>Mis Instituciones</h1>
+    <div class="grid">
+        {% for inst, rol in instituciones_roles %}
+        <div class="card">
+            <h3>{{ inst.nombre }}</h3>
+            <p><strong>Mi Rol:</strong> {{ rol | replace('_', ' ') | capitalize }}</p>
+            <div class="card-footer">
+                <a href="{{ url_for('institucion.detalle', inst_id=inst.id) }}" class="btn btn-sm">Gestionar</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <p>Aún no perteneces a ninguna institución.</p>
+            <a href="{{ url_for('institucion.listar') }}" class="btn">Explorar Directorio</a>
+        </div>
+        {% endfor %}
     </div>
-    <a href="{{ url_for('institucion.detalle', inst_id=inst.id) }}" class="btn btn-outline btn-sm">Ver detalle</a>
-  </div>
-  {% endfor %}
 </div>
-{% else %}
-<div class="empty-state">
-  <p>Aún no perteneces a ninguna institución.</p>
-  <a href="{{ url_for('institucion.listar') }}" class="btn btn-primary">Explorar instituciones</a>
-</div>
-{% endif %}
 {% endblock %}

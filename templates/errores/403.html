@@ -1,10 +1,14 @@
 {% extends "base.html" %}
-{% block titulo %}403 — Sin acceso{% endblock %}
-{% block contenido %}
-<div class="error-page">
-  <div class="error-code">403</div>
-  <h2>Acceso denegado</h2>
-  <p>No tienes permisos para acceder a este recurso. Si crees que deberías tener acceso, contacta con el propietario del yacimiento.</p>
-  <a href="{{ url_for('main.inicio') if current_user.is_authenticated else url_for('main.portada') }}" class="btn btn-primary">Volver al inicio</a>
+{% block title %}Acceso Prohibido - ArqueoTrack{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="card" style="text-align: center; padding: 3rem;">
+        <h2>Acceso Prohibido (403)</h2>
+        <p style="color: var(--gray); margin: 1rem 0;">No tienes permisos para acceder a este recurso.</p>
+        <div style="margin-top: 2rem;">
+            <a href="/inicio" class="btn">← Volver al Inicio</a>
+        </div>
+    </div>
 </div>
 {% endblock %}

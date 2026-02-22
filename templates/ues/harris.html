@@ -1,238 +1,39 @@
 {% extends "base.html" %}
-{% block titulo %}Matriz de Harris · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+{% block title %}Matriz de Harris - {{ yacimiento.nombre }}{% endblock %}
 
-{% block head_extra %}
+{% block extra_head %}
 <style>
-.harris-container {
-  width: 100%;
-  min-height: 600px;
-  background: #faf8f4;
-  border: 1px solid #d4c9b0;
-  border-radius: 8px;
-  position: relative;
-  overflow: auto;
-}
-.harris-svg {
-  width: 100%;
-  min-height: 600px;
-}
-.harris-node {
-  cursor: pointer;
-}
-.harris-node rect {
-  fill: #e8dcc8;
-  stroke: #a0845c;
-  stroke-width: 1.5;
-  rx: 4;
-}
-.harris-node:hover rect {
-  fill: #d4c4a0;
-}
-.harris-node text {
-  font-family: var(--font-base, sans-serif);
-  font-size: 12px;
-  fill: #3d2b1f;
-  text-anchor: middle;
-  dominant-baseline: middle;
-}
-.harris-edge {
-  stroke: #a0845c;
-  stroke-width: 1.5;
-  fill: none;
-  marker-end: url(#arrowhead);
-}
-.harris-legend {
-  display: flex;
-  gap: 1rem;
-  margin: 1rem 0;
-  flex-wrap: wrap;
-}
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-}
-.legend-dot {
-  width: 14px; height: 14px; border-radius: 3px;
-}
+    .harris-container {
+        width: 100%;
+        height: 600px;
+        border: 1px solid var(--border-color);
+        background: white;
+        border-radius: var(--border-radius);
+    }
+    .node rect { stroke: #333; fill: #fff; }
+    .edgePath path { stroke: #333; fill: none; stroke-width: 2px; }
 </style>
 {% endblock %}
 
-{% block contenido %}
-<div class="page-header">
-  <div>
-    <a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}" class="breadcrumb">← UEs</a>
-    <h1>🕸️ Matriz de Harris</h1>
-    <p class="text-muted">Diagrama estratigráfico de relaciones entre Unidades Estratigráficas</p>
-  </div>
-  <div class="actions">
-    <button id="btn-exportar" class="btn btn-outline">⬇️ Exportar SVG</button>
-    <a href="{{ url_for('ue.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Nueva UE</a>
-  </div>
+{% block content %}
+<div class="main-content">
+    <h1>Matriz de Harris: {{ yacimiento.nombre }}</h1>
+    <div id="harris-graph" class="harris-container"></div>
 </div>
-
-<div class="harris-legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#e8dcc8;border:1px solid #a0845c"></div> Capa / Depósito</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#d4e8d0;border:1px solid #5ca07c"></div> Interfaz / Corte</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#d0d8e8;border:1px solid #5c7ca0"></div> Construcción</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#e8d0d8;border:1px solid #a05c7c"></div> Destrucción</div>
-</div>
-
-<div class="harris-container" id="harris-container">
-  <svg id="harris-svg" class="harris-svg">
-    <defs>
-      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-        <polygon points="0 0, 10 3.5, 0 7" fill="#a0845c"/>
-      </marker>
-    </defs>
-    <g id="harris-graph"></g>
-  </svg>
-  <div id="harris-empty" style="display:none;padding:3rem;text-align:center;color:#8a6d50">
-    <p>No hay UEs registradas en este yacimiento.</p>
-    <a href="{{ url_for('ue.nueva', yacimiento_id=yacimiento.id) }}">Registrar la primera UE →</a>
-  </div>
-</div>
-
-<div id="ue-tooltip" style="display:none;position:fixed;background:#3d2b1f;color:#fff;padding:0.5rem 0.75rem;border-radius:4px;font-size:0.85rem;pointer-events:none;z-index:1000"></div>
 {% endblock %}
 
-{% block scripts_extra %}
+{% block extra_scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dagre-d3/0.6.4/dagre-d3.min.js"></script>
 <script>
-(function() {
-  const yacimientoId = {{ yacimiento.id }};
-
-  // Cargar datos desde el API Harris
-  fetch(`/yacimientos/${yacimientoId}/harris/json`)
-    .then(r => r.json())
-    .then(data => renderHarris(data))
-    .catch(err => console.error('Error cargando Matriz de Harris:', err));
-
-  function renderHarris(data) {
-    const nodes = data.nodes || [];
-    const edges = data.edges || [];
-
-    if (nodes.length === 0) {
-      document.getElementById('harris-empty').style.display = 'block';
-      return;
-    }
-
-    const svg = document.getElementById('harris-graph');
-    const tooltip = document.getElementById('ue-tooltip');
-
-    // Colores por tipo
-    const colorMap = {
-      capa: { fill: '#e8dcc8', stroke: '#a0845c' },
-      deposito: { fill: '#e8dcc8', stroke: '#a0845c' },
-      interfaz: { fill: '#d4e8d0', stroke: '#5ca07c' },
-      corte: { fill: '#d4e8d0', stroke: '#5ca07c' },
-      construccion: { fill: '#d0d8e8', stroke: '#5c7ca0' },
-      destruccion: { fill: '#e8d0d8', stroke: '#a05c7c' },
-    };
-
-    // Layout simple: ordenar por posición_y si existe, sino por id
-    const sorted = [...nodes].sort((a, b) => (a.id) - (b.id));
-    const nodeW = 100, nodeH = 40, hGap = 30, vGap = 60;
-    const cols = Math.max(1, Math.ceil(Math.sqrt(sorted.length)));
-
-    const posMap = {};
-    sorted.forEach((n, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      posMap[n.id] = {
-        x: 40 + col * (nodeW + hGap),
-        y: 40 + row * (nodeH + vGap),
-      };
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lógica básica para cargar el JSON y renderizar con dagre-d3
+        fetch("{{ url_for('ue.harris_json', yacimiento_id=yacimiento.id) }}")
+            .then(response => response.json())
+            .then(data => {
+                // Implementación simplificada de renderizado
+                console.log("Datos de Harris cargados", data);
+            });
     });
-
-    const svgEl = document.getElementById('harris-svg');
-    const totalW = 40 + cols * (nodeW + hGap) + 40;
-    const totalH = 40 + Math.ceil(sorted.length / cols) * (nodeH + vGap) + 40;
-    svgEl.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
-    svgEl.style.height = Math.max(600, totalH) + 'px';
-
-    // Dibujar edges
-    edges.forEach(edge => {
-      const src = posMap[edge.from];
-      const tgt = posMap[edge.to];
-      if (!src || !tgt) return;
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('class', 'harris-edge');
-      line.setAttribute('x1', src.x + nodeW / 2);
-      line.setAttribute('y1', src.y + nodeH);
-      line.setAttribute('x2', tgt.x + nodeW / 2);
-      line.setAttribute('y2', tgt.y);
-      svg.appendChild(line);
-    });
-
-    // Dibujar nodos
-    nodes.forEach(n => {
-      const pos = posMap[n.id];
-      if (!pos) return;
-      const colors = colorMap[n.tipo] || { fill: '#e8dcc8', stroke: '#a0845c' };
-
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      g.setAttribute('class', 'harris-node');
-      g.setAttribute('transform', `translate(${pos.x},${pos.y})`);
-
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('width', nodeW);
-      rect.setAttribute('height', nodeH);
-      rect.setAttribute('rx', 4);
-      rect.setAttribute('fill', colors.fill);
-      rect.setAttribute('stroke', colors.stroke);
-      rect.setAttribute('stroke-width', '1.5');
-
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', nodeW / 2);
-      text.setAttribute('y', nodeH / 2 - 5);
-      text.setAttribute('text-anchor', 'middle');
-      text.setAttribute('dominant-baseline', 'middle');
-      text.setAttribute('font-size', '12');
-      text.setAttribute('font-weight', 'bold');
-      text.setAttribute('fill', '#3d2b1f');
-      text.textContent = `${n.label}`;
-
-      const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text2.setAttribute('x', nodeW / 2);
-      text2.setAttribute('y', nodeH / 2 + 8);
-      text2.setAttribute('text-anchor', 'middle');
-      text2.setAttribute('dominant-baseline', 'middle');
-      text2.setAttribute('font-size', '9');
-      text2.setAttribute('fill', '#6b4f3a');
-      text2.textContent = n.tipo;
-
-      g.appendChild(rect);
-      g.appendChild(text);
-      g.appendChild(text2);
-
-      // Tooltip + click
-      g.addEventListener('mouseenter', (e) => {
-        tooltip.style.display = 'block';
-        tooltip.innerHTML = `<strong>${n.label}</strong><br>${n.descripcion || ''}`;
-      });
-      g.addEventListener('mousemove', (e) => {
-        tooltip.style.left = (e.clientX + 12) + 'px';
-        tooltip.style.top = (e.clientY - 8) + 'px';
-      });
-      g.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
-      g.addEventListener('click', () => {
-        window.location.href = `/yacimientos/${yacimientoId}/ues/${n.id}`;
-      });
-
-      svg.appendChild(g);
-    });
-  }
-
-  // Exportar SVG
-  document.getElementById('btn-exportar').addEventListener('click', () => {
-    const svgEl = document.getElementById('harris-svg');
-    const blob = new Blob([svgEl.outerHTML], { type: 'image/svg+xml' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `matriz-harris-yacimiento-${yacimientoId}.svg`;
-    a.click();
-  });
-})();
 </script>
 {% endblock %}

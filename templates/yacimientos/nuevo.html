@@ -1,96 +1,276 @@
 {% extends "base.html" %}
-{% block titulo %}Nuevo Yacimiento — ArqueoTrack{% endblock %}
-{% block contenido %}
 
-<div class="page-header">
-  <div>
-    <a href="{{ url_for('main.inicio') }}" class="breadcrumb-link">← Inicio</a>
-    <h1>🗺️ Nuevo yacimiento</h1>
-  </div>
+{% block title %}Registrar Yacimiento - ArqueoTrack{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<style>
+.map-mode-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.map-mode-tabs button {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--border-color);
+    background: white;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.map-mode-tabs button.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+#marker-map, #polygon-map {
+    height: 450px;
+    border-radius: var(--border-radius);
+    border: 2px solid var(--border-color);
+}
+.hidden {
+    display: none !important;
+}
+#area-display {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-top: 1rem;
+    font-weight: 600;
+    color: #2e7d32;
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="card" style="max-width: 900px; margin: 2rem auto;">
+        <h1>Registrar Nuevo Yacimiento</h1>
+        <p style="color: var(--gray); margin-bottom: 2rem;">
+            Completa la información del yacimiento arqueológico que deseas registrar
+        </p>
+
+        <form method="POST" enctype="multipart/form-data">
+            {{ formulario.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="nombre">Nombre del Yacimiento *</label>
+                {{ formulario.nombre(class="form-control", id="nombre", autofocus=true) }}
+                {% if formulario.nombre.errors %}
+                    {% for error in formulario.nombre.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="ubicacion">Ubicación</label>
+                {{ formulario.ubicacion(class="form-control", id="ubicacion") }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Dirección o descripción del lugar (ej: "Madrid, España" o "Sector Norte, Parcela 15")
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion">Descripción del Yacimiento</label>
+                {{ formulario.descripcion(class="form-control", id="descripcion", rows=4) }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Describe las características generales del yacimiento
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="responsable">Responsable del Proyecto</label>
+                {{ formulario.responsable(class="form-control", id="responsable") }}
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div class="form-group">
+                    <label for="fecha_inicio">Fecha de Inicio de Excavación</label>
+                    {{ formulario.fecha_inicio(class="form-control", id="fecha_inicio") }}
+                </div>
+
+                <div class="form-group">
+                    <label for="fecha_fin">Fecha de Finalización</label>
+                    {{ formulario.fecha_fin(class="form-control", id="fecha_fin") }}
+                    <small style="color: var(--gray); font-size: var(--font-sm);">
+                        Dejar vacío si está en progreso
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="altitud_media">Altitud Media (metros)</label>
+                    {{ formulario.altitud_media(class="form-control", id="altitud_media", type="number", step="0.1") }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>📍 Ubicación del Yacimiento</label>
+                <p style="color: var(--gray); font-size: var(--font-sm); margin-bottom: 1rem;">
+                    Selecciona cómo quieres definir la ubicación del yacimiento
+                </p>
+
+                <div class="map-mode-tabs">
+                    <button type="button" id="mode-marker" class="active" onclick="switchMapMode('marker')">
+                        📌 Marcador Simple
+                    </button>
+                    <button type="button" id="mode-polygon" onclick="switchMapMode('polygon')">
+                        ✏️ Dibujar Perímetro
+                    </button>
+                </div>
+
+                <div class="map-container">
+                    <div id="marker-map"></div>
+                    <div id="polygon-map" class="hidden"></div>
+                </div>
+
+                {{ formulario.lat(type="hidden", id="lat") }}
+                {{ formulario.lng(type="hidden", id="lng") }}
+                {{ formulario.polygon_geojson(type="hidden", id="polygon_geojson") }}
+                {{ formulario.area(type="hidden", id="area_m2") }}
+
+                <p id="coords-display" style="margin-top: 0.5rem; color: var(--gray); font-size: var(--font-sm); font-family: monospace;"></p>
+                <div id="area-display"></div>
+
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius); font-size: var(--font-sm);">
+                    <strong>💡 Consejo:</strong> Si seleccionas "Dibujar Perímetro", podrás definir el área exacta del yacimiento. El área se calculará automáticamente.
+                </div>
+            </div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button type="submit" class="btn" style="padding: 1rem 2rem;">
+                    ✓ Registrar Yacimiento
+                </button>
+                <a href="/inicio" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
 </div>
+{% endblock %}
 
-<div class="form-container">
-  <form method="POST" novalidate>
-    {{ formulario.hidden_tag() }}
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/polygon-draw.js') }}"></script>
 
-    <div class="form-card">
-      <h3>Información básica</h3>
+<script>
+let markerMap = null;
+let polygonMapInstance = null;
+let currentMode = 'marker';
 
-      <div class="form-group">
-        {{ formulario.nombre.label(class="form-label required") }}
-        {{ formulario.nombre(class="form-control" + (" is-invalid" if formulario.nombre.errors else ""), placeholder="Yacimiento de El Argar") }}
-        {% for e in formulario.nombre.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
+// Inicializar mapa de marcador simple
+function initMarkerMap() {
+    const mapElement = document.getElementById('marker-map');
+    if (!mapElement || markerMap) return;
 
-      <div class="form-group">
-        {{ formulario.ubicacion.label(class="form-label") }}
-        {{ formulario.ubicacion(class="form-control" + (" is-invalid" if formulario.ubicacion.errors else ""), placeholder="Municipio, provincia, país") }}
-        {% for e in formulario.ubicacion.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
+    const defaultLat = 40.4168;
+    const defaultLng = -3.7038;
 
-      <div class="form-group">
-        {{ formulario.descripcion.label(class="form-label") }}
-        {{ formulario.descripcion(class="form-control" + (" is-invalid" if formulario.descripcion.errors else ""), rows=4, placeholder="Breve descripción del yacimiento, período cronológico, tipo de asentamiento…") }}
-        {% for e in formulario.descripcion.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
+    markerMap = L.map('marker-map').setView([defaultLat, defaultLng], 6);
 
-      <div class="form-group">
-        {{ formulario.responsable.label(class="form-label") }}
-        {{ formulario.responsable(class="form-control" + (" is-invalid" if formulario.responsable.errors else ""), placeholder="Director/a de la excavación") }}
-        {% for e in formulario.responsable.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
-    </div>
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(markerMap);
 
-    <div class="form-card">
-      <h3>Fechas de excavación</h3>
-      <div class="form-row">
-        <div class="form-group">
-          {{ formulario.fecha_inicio.label(class="form-label") }}
-          {{ formulario.fecha_inicio(class="form-control" + (" is-invalid" if formulario.fecha_inicio.errors else ""), type="date") }}
-          {% for e in formulario.fecha_inicio.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-        </div>
-        <div class="form-group">
-          {{ formulario.fecha_fin.label(class="form-label") }}
-          {{ formulario.fecha_fin(class="form-control" + (" is-invalid" if formulario.fecha_fin.errors else ""), type="date") }}
-          {% for e in formulario.fecha_fin.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-        </div>
-      </div>
-    </div>
+    const marker = L.marker([defaultLat, defaultLng], {
+        draggable: true,
+        icon: L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background: #6366F1; width: 35px; height: 35px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">📍</div>',
+            iconSize: [35, 35],
+            iconAnchor: [17.5, 17.5]
+        })
+    }).addTo(markerMap);
 
-    <div class="form-card">
-      <h3>📍 Ubicación geográfica</h3>
-      <div class="form-row">
-        <div class="form-group">
-          {{ formulario.lat.label(class="form-label") }}
-          {{ formulario.lat(class="form-control", placeholder="37.9922", step="any", type="number", id="input-lat") }}
-        </div>
-        <div class="form-group">
-          {{ formulario.lng.label(class="form-label") }}
-          {{ formulario.lng(class="form-control", placeholder="-1.8641", step="any", type="number", id="input-lng") }}
-        </div>
-        <div class="form-group">
-          {{ formulario.altitud_media.label(class="form-label") }}
-          {{ formulario.altitud_media(class="form-control", placeholder="320", step="any", type="number") }}
-        </div>
-      </div>
+    const latInput = document.getElementById('lat');
+    const lngInput = document.getElementById('lng');
 
-      <div class="form-group">
-        {{ formulario.area.label(class="form-label") }}
-        {{ formulario.area(class="form-control", placeholder="5000", step="any", type="number") }}
-        <div class="form-hint">Área total del yacimiento en m²</div>
-      </div>
+    function updateCoords(lat, lng) {
+        if (latInput) latInput.value = lat.toFixed(6);
+        if (lngInput) lngInput.value = lng.toFixed(6);
+        const display = document.getElementById('coords-display');
+        if (display) display.textContent = `Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
 
-      <!-- Mapa interactivo para selección -->
-      <div id="mapa-selector" class="mapa-container" style="height:300px; background:#e8f4f8; display:flex; align-items:center; justify-content:center; border-radius:8px;">
-        <p class="text-muted">🗺️ Mapa de selección de coordenadas</p>
-      </div>
-      {{ formulario.polygon_geojson(id="polygon-geojson", type="hidden") }}
-    </div>
+    updateCoords(defaultLat, defaultLng);
 
-    <div class="form-actions">
-      <a href="{{ url_for('main.inicio') }}" class="btn btn-outline">Cancelar</a>
-      <button type="submit" class="btn btn-primary">Crear yacimiento</button>
-    </div>
-  </form>
-</div>
+    marker.on('dragend', function(e) {
+        const pos = marker.getLatLng();
+        updateCoords(pos.lat, pos.lng);
+    });
+
+    markerMap.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateCoords(e.latlng.lat, e.latlng.lng);
+    });
+}
+
+// Inicializar mapa de polígono
+function initPolygonMap() {
+    if (polygonMapInstance) return;
+
+    polygonMapInstance = initPolygonDrawMap({
+        mapId: 'polygon-map',
+        polygonInputId: 'polygon_geojson',
+        areaInputId: 'area_m2',
+        areaDisplayId: 'area-display',
+        lat: 40.4168,
+        lng: -3.7038,
+        zoom: 6,
+        polygonColor: '#a0826d'
+    });
+}
+
+// Cambiar entre modos
+function switchMapMode(mode) {
+    currentMode = mode;
+
+    const markerBtn = document.getElementById('mode-marker');
+    const polygonBtn = document.getElementById('mode-polygon');
+    const markerMapEl = document.getElementById('marker-map');
+    const polygonMapEl = document.getElementById('polygon-map');
+    const areaDisplay = document.getElementById('area-display');
+    const polygonInput = document.getElementById('polygon_geojson');
+    const areaInput = document.getElementById('area_m2');
+
+    if (mode === 'marker') {
+        markerBtn.classList.add('active');
+        polygonBtn.classList.remove('active');
+        markerMapEl.classList.remove('hidden');
+        polygonMapEl.classList.add('hidden');
+
+        if (areaDisplay) areaDisplay.style.display = 'none';
+        if (polygonInput) polygonInput.value = '';
+        if (areaInput) areaInput.value = '';
+
+        if (!markerMap) {
+            setTimeout(initMarkerMap, 100);
+        } else {
+            markerMap.invalidateSize();
+        }
+    } else {
+        markerBtn.classList.remove('active');
+        polygonBtn.classList.add('active');
+        markerMapEl.classList.add('hidden');
+        polygonMapEl.classList.remove('hidden');
+
+        if (!polygonMapInstance) {
+            setTimeout(initPolygonMap, 100);
+        } else {
+            polygonMapInstance.map.invalidateSize();
+        }
+    }
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    initMarkerMap();
+});
+</script>
 {% endblock %}

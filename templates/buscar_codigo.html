@@ -1,95 +1,118 @@
 {% extends "base.html" %}
-{% block titulo %}Buscar por Código — ArqueoTrack{% endblock %}
-{% block contenido %}
+{% block title %}Buscar por Código - ArqueoTrack{% endblock %}
 
-<div class="page-header">
-  <h1>🔍 Buscar hallazgo por código</h1>
-</div>
+{% block content %}
+<div class="main-content">
+    <div class="form-container" style="max-width: 600px;">
+        <h1>Buscar Hallazgo por Código</h1>
+        <p style="color: var(--gray); margin-bottom: 2rem;">
+            Introduce el código de acceso único de un hallazgo para acceder directamente a su información
+        </p>
 
-<div class="search-container">
-  <div class="search-card">
-    <p class="search-desc">Introduce el código de 10 caracteres del hallazgo (p.ej. <code>AB-12345678</code>) para acceder directamente a su ficha.</p>
+        <form method="POST" id="buscarForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <form method="POST" novalidate>
-      {{ formulario.hidden_tag() }}
-      <div class="search-form-row">
-        <div class="form-group flex-grow">
-          {{ formulario.codigo.label(class="form-label") }}
-          {{ formulario.codigo(class="form-control form-control-lg" + (" is-invalid" if formulario.codigo.errors else ""),
-              placeholder="XXXXXXXXXX", maxlength=10, autocomplete="off",
-              style="font-family:monospace; letter-spacing:0.1em; text-transform:uppercase") }}
-          {% for e in formulario.codigo.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            <div class="form-group">
+                <label for="codigo">Código de Acceso</label>
+                <input type="text" 
+                       id="codigo" 
+                       name="codigo" 
+                       class="form-control" 
+                       placeholder="Ej: ABC12345"
+                       style="text-transform: uppercase; letter-spacing: 2px; font-family: monospace; font-size: 1.25rem; text-align: center;"
+                       maxlength="10"
+                       required
+                       autofocus>
+                <small style="color: var(--gray); display: block; margin-top: 0.5rem;">
+                    El código tiene 8 caracteres alfanuméricos
+                </small>
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">
+                Buscar Hallazgo
+            </button>
+        </form>
+
+        <div id="resultado" style="display: none; margin-top: 2rem;">
+            <!-- Hallazgo encontrado se mostrará aquí -->
         </div>
-        <button type="submit" class="btn btn-primary btn-lg">Buscar</button>
-      </div>
-    </form>
 
-    <div class="search-tip">
-      <h4>💡 ¿Cómo obtener el código?</h4>
-      <ul>
-        <li>Escanea el código QR de la etiqueta física del hallazgo.</li>
-        <li>Cópialo de la ficha del hallazgo en la aplicación.</li>
-        <li>Búscalo en el inventario del yacimiento.</li>
-      </ul>
-    </div>
-  </div>
+        <div style="margin-top: 3rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius-lg); border-left: 4px solid var(--info-color);">
+            <h3 style="color: var(--info-color); margin-bottom: 0.75rem;">¿Qué es el código de acceso?</h3>
+            <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0;">
+                Cada hallazgo registrado en ArqueoTrack tiene un código único de acceso. 
+                Este código permite identificar y localizar rápidamente cualquier pieza arqueológica 
+                dentro del sistema, facilitando la colaboración entre equipos de investigación.
+            </p>
+        </div>
 
-  <!-- Búsqueda rápida por API (sin recargar) -->
-  <div class="search-card" id="search-api-card">
-    <h3>Búsqueda rápida</h3>
-    <div class="search-form-row">
-      <input type="text" id="api-codigo" class="form-control form-control-lg"
-             placeholder="XXXXXXXXXX" maxlength="10" autocomplete="off"
-             style="font-family:monospace; letter-spacing:0.1em; text-transform:uppercase">
-      <button class="btn btn-outline btn-lg" onclick="buscarPorAPI()">Buscar</button>
+        <a href="/inicio" class="btn btn-secondary" style="margin-top: 2rem;">← Volver al Inicio</a>
     </div>
-    <div id="api-resultado" class="api-result" style="display:none"></div>
-  </div>
 </div>
 
-{% endblock %}
-
-{% block scripts_extra %}
 <script>
-function buscarPorAPI() {
-  const codigo = document.getElementById('api-codigo').value.trim().toUpperCase();
-  const resultado = document.getElementById('api-resultado');
-  if (!codigo) return;
+const hallazgoDetalleUrlTemplate = "{{ url_for('hallazgo.detalle', hallazgo_id=0) }}";
 
-  resultado.style.display = 'block';
-  resultado.innerHTML = '<p class="text-muted">Buscando…</p>';
+document.getElementById('buscarForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-  fetch('{{ url_for("main.api_buscar_hallazgo") }}', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content
-    },
-    body: JSON.stringify({ codigo })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      resultado.innerHTML = `
-        <div class="alert alert-success">
-          <strong>✅ Hallazgo encontrado</strong><br>
-          <strong>Código:</strong> ${data.hallazgo.codigo}<br>
-          <strong>Tipo:</strong> ${data.hallazgo.tipo}<br>
-          <strong>Yacimiento:</strong> ${data.hallazgo.yacimiento}<br>
-          <strong>Fecha:</strong> ${data.hallazgo.fecha}<br>
-          <a href="/hallazgo/${data.hallazgo.id}" class="btn btn-sm btn-primary" style="margin-top:8px">Ver ficha completa</a>
-        </div>`;
-    } else {
-      resultado.innerHTML = `<div class="alert alert-error">❌ ${data.message}</div>`;
+    const codigo = document.getElementById('codigo').value.trim().toUpperCase();
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    try {
+        const response = await fetch('/api/buscar-hallazgo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ codigo: codigo })
+        });
+
+        const data = await response.json();
+        const resultadoDiv = document.getElementById('resultado');
+
+        if (data.success) {
+            const hallazgoDetalleUrl = hallazgoDetalleUrlTemplate.replace('0', data.hallazgo.id);
+            resultadoDiv.innerHTML = `
+                <div style="padding: 2rem; background: #d4edda; border: 2px solid #28a745; border-radius: var(--border-radius-lg); text-align: center;">
+                    <h2 style="color: #155724; margin-bottom: 1rem;">✓ Hallazgo Encontrado</h2>
+                    <div style="background: white; padding: 1.5rem; border-radius: var(--border-radius); margin: 1rem 0; text-align: left;">
+                        <p style="margin: 0.5rem 0;"><strong>Código:</strong> ${data.hallazgo.codigo}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Tipo:</strong> ${data.hallazgo.tipo}</p>
+                        ${data.hallazgo.descripcion ? `<p style="margin: 0.5rem 0;"><strong>Descripción:</strong> ${data.hallazgo.descripcion}</p>` : ''}
+                        ${data.hallazgo.yacimiento ? `<p style="margin: 0.5rem 0;"><strong>Yacimiento:</strong> ${data.hallazgo.yacimiento}</p>` : ''}
+                        ${data.hallazgo.fecha ? `<p style="margin: 0.5rem 0;"><strong>Fecha:</strong> ${data.hallazgo.fecha}</p>` : ''}
+                    </div>
+                    <a href="${hallazgoDetalleUrl}" class="btn" style="margin-top: 1rem; display: inline-block;">
+                        Ver Detalles Completos →
+                    </a>
+                </div>
+            `;
+            resultadoDiv.style.display = 'block';
+        } else {
+            resultadoDiv.innerHTML = `
+                <div style="padding: 2rem; background: #f8d7da; border: 2px solid #dc3545; border-radius: var(--border-radius-lg); text-align: center;">
+                    <h2 style="color: #721c24; margin-bottom: 1rem;">✗ Hallazgo No Encontrado</h2>
+                    <p style="color: #721c24;">No se encontró ningún hallazgo con el código <strong>${codigo}</strong></p>
+                    <p style="color: #721c24; margin-top: 1rem; font-size: var(--font-sm);">
+                        Verifica que el código sea correcto o que tengas acceso a este hallazgo.
+                    </p>
+                </div>
+            `;
+            resultadoDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        const resultadoDiv = document.getElementById('resultado');
+        resultadoDiv.innerHTML = `
+            <div style="padding: 2rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: var(--border-radius-lg); text-align: center;">
+                <h2 style="color: #856404;">Error de Conexión</h2>
+                <p style="color: #856404;">No se pudo realizar la búsqueda. Por favor, intenta nuevamente.</p>
+            </div>
+        `;
+        resultadoDiv.style.display = 'block';
     }
-  })
-  .catch(() => {
-    resultado.innerHTML = `<div class="alert alert-error">Error de conexión.</div>`;
-  });
-}
-
-document.getElementById('api-codigo').addEventListener('keydown', e => {
-  if (e.key === 'Enter') buscarPorAPI();
 });
 </script>
 {% endblock %}

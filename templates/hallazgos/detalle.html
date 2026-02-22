@@ -1,153 +1,177 @@
 {% extends "base.html" %}
-{% block titulo %}{{ hallazgo.codigo_acceso }} — ArqueoTrack{% endblock %}
-{% block contenido %}
+{% block title %}Hallazgo: {{ hallazgo.codigo_acceso }} - ArqueoTrack{% endblock %}
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('main.inicio') }}">Inicio</a> ›
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=hallazgo.yacimiento_id) }}">{{ hallazgo.yacimiento.nombre }}</a> ›
-  <span>{{ hallazgo.codigo_acceso }}</span>
-</nav>
-
-<div class="page-header">
-  <div>
-    <h1>🏺 {{ hallazgo.tipo or 'Hallazgo' }}</h1>
-    <code class="codigo-badge">{{ hallazgo.codigo_acceso }}</code>
-    {% if hallazgo.sector %}
-    <span class="badge" style="background: {{ hallazgo.sector.color or '#6366F1' }}20; color: {{ hallazgo.sector.color or '#6366F1' }}">
-      📐 {{ hallazgo.sector.nombre }}
-    </span>
-    {% endif %}
-  </div>
-  {% if puede_editar %}
-  <div class="header-actions">
-    <a href="{{ url_for('hallazgo.editar', hallazgo_id=hallazgo.id) }}" class="btn btn-outline">✏️ Editar</a>
-    <form action="{{ url_for('hallazgo.eliminar', hallazgo_id=hallazgo.id) }}" method="POST" style="display:inline"
-          onsubmit="return confirm('¿Eliminar este hallazgo?')">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
-    </form>
-  </div>
-  {% endif %}
-</div>
-
-<div class="detalle-layout">
-  <div class="detalle-main">
-
-    <!-- Foto -->
-    {% if hallazgo.foto %}
-    <div class="info-card">
-      <img src="{{ hallazgo.foto }}" alt="Foto del hallazgo {{ hallazgo.codigo_acceso }}"
-           class="hallazgo-foto" style="max-width:100%; border-radius:8px;">
-    </div>
-    {% endif %}
-
-    <!-- Descripción -->
-    {% if hallazgo.descripcion %}
-    <div class="info-card">
-      <h3>Descripción</h3>
-      <p>{{ hallazgo.descripcion }}</p>
-    </div>
-    {% endif %}
-
-    <!-- Datos técnicos -->
-    <div class="info-card">
-      <h3>Datos técnicos</h3>
-      <dl class="data-list">
-        <dt>Tipo</dt><dd>{{ hallazgo.tipo or '—' }}</dd>
-        <dt>Material</dt><dd>{{ hallazgo.material or '—' }}</dd>
-        <dt>Datación</dt><dd>{{ hallazgo.datacion or '—' }}</dd>
-        <dt>Dimensiones</dt><dd>{{ hallazgo.dimensiones or '—' }}</dd>
-        {% if hallazgo.peso %}
-        <dt>Peso</dt><dd>{{ hallazgo.peso }} g</dd>
-        {% endif %}
-        <dt>Estado de conservación</dt><dd>{{ hallazgo.estado_conservacion or '—' }}</dd>
-      </dl>
-    </div>
-
-    <!-- Localización -->
-    <div class="info-card">
-      <h3>📍 Localización</h3>
-      <dl class="data-list">
-        <dt>Ubicación</dt><dd>{{ hallazgo.ubicacion or '—' }}</dd>
-        {% if hallazgo.lat and hallazgo.lng %}
-        <dt>Coordenadas</dt><dd>{{ "%.6f" | format(hallazgo.lat) }}, {{ "%.6f" | format(hallazgo.lng) }}</dd>
-        {% endif %}
-        {% if hallazgo.altitud %}
-        <dt>Altitud</dt><dd>{{ hallazgo.altitud }} m</dd>
-        {% endif %}
-        {% if hallazgo.fecha %}
-        <dt>Fecha de hallazgo</dt><dd>{{ hallazgo.fecha.strftime('%d/%m/%Y') }}</dd>
-        {% endif %}
-      </dl>
-    </div>
-
-    <!-- Extracción y destino -->
-    {% if hallazgo.proceso_extraccion or hallazgo.destino or hallazgo.notas %}
-    <div class="info-card">
-      <h3>Extracción y destino</h3>
-      {% if hallazgo.proceso_extraccion %}
-      <p><strong>Proceso de extracción:</strong> {{ hallazgo.proceso_extraccion }}</p>
-      {% endif %}
-      {% if hallazgo.destino %}
-      <p><strong>Destino:</strong> {{ hallazgo.destino }}</p>
-      {% endif %}
-      {% if hallazgo.notas %}
-      <p><strong>Notas:</strong> {{ hallazgo.notas }}</p>
-      {% endif %}
-    </div>
-    {% endif %}
-
-    <!-- Comentarios -->
-    <div class="info-card">
-      <h3>💬 Comentarios ({{ comentarios | length }})</h3>
-      {% for c in comentarios %}
-      <div class="comentario">
-        <div class="comentario-header">
-          <strong>{{ c.usuario.nombre_usuario }}</strong>
-          <time class="text-muted small">{{ time_ago(c.fecha_creacion) }}</time>
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="margin-bottom: 0.5rem;">Hallazgo {{ hallazgo.codigo_acceso }}</h1>
+                <p style="color: var(--gray); margin: 0;">
+                    <span class="badge badge-info">{{ hallazgo.tipo|title if hallazgo.tipo else 'Sin clasificar' }}</span>
+                    {% if hallazgo.estado_conservacion %}
+                    <span class="badge badge-secondary">{{ hallazgo.estado_conservacion|title }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="button-group" style="margin: 0;">
+                <a href="/editar_hallazgo/{{ hallazgo.id }}" class="btn">Editar</a>
+                <a href="/yacimiento/{{ hallazgo.yacimiento_id }}" class="btn btn-secondary">Volver al Yacimiento</a>
+            </div>
         </div>
-        <p class="comentario-body">{{ c.contenido }}</p>
-      </div>
-      {% else %}
-      <p class="text-muted">Sin comentarios todavía.</p>
-      {% endfor %}
 
-      <form action="{{ url_for('hallazgo.comentar', hallazgo_id=hallazgo.id) }}" method="POST" class="comentario-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <textarea name="contenido" class="form-control" rows="3" placeholder="Escribe un comentario…" required></textarea>
-        <button type="submit" class="btn btn-sm btn-primary" style="margin-top:8px">Comentar</button>
-      </form>
-    </div>
-
-  </div>
-
-  <!-- Aside -->
-  <div class="detalle-aside">
-    <div class="aside-card">
-      <h4>Información</h4>
-      <dl class="data-list">
-        <dt>Yacimiento</dt>
-        <dd><a href="{{ url_for('yacimiento.detalle', yacimiento_id=hallazgo.yacimiento_id) }}">{{ hallazgo.yacimiento.nombre }}</a></dd>
-        {% if hallazgo.sector %}
-        <dt>Sector</dt>
-        <dd><a href="{{ url_for('sector.detalle', sector_id=hallazgo.sector.id) }}">{{ hallazgo.sector.nombre }}</a></dd>
+        {% if hallazgo.foto %}
+        <div style="margin: 1.5rem 0; text-align: center;">
+            <img src="/uploads/{{ hallazgo.foto }}" alt="Foto del hallazgo" style="max-width: 100%; max-height: 400px; border-radius: var(--border-radius); box-shadow: var(--shadow);">
+        </div>
         {% endif %}
-        <dt>Registrado por</dt>
-        <dd>{{ hallazgo.user.nombre_usuario if hallazgo.user else '—' }}</dd>
-      </dl>
+
+        {% if hallazgo.descripcion %}
+        <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--primary-color);">
+            <h3>Descripción</h3>
+            <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">
+                {{ hallazgo.descripcion }}
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="detail-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius-lg);">
+            <div class="detail-item">
+                <strong>Código de Acceso</strong><br>
+                <span style="color: var(--primary-color); font-family: monospace; font-size: 1.2rem;">{{ hallazgo.codigo_acceso }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Tipo</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.tipo|title if hallazgo.tipo else 'No especificado' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Ubicación</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.ubicacion or 'No especificada' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Fecha de Descubrimiento</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.fecha or 'No especificada' }}</span>
+            </div>
+
+            {% if hallazgo.material %}
+            <div class="detail-item">
+                <strong>Material</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.material }}</span>
+            </div>
+            {% endif %}
+
+            {% if hallazgo.dimensiones %}
+            <div class="detail-item">
+                <strong>Dimensiones</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.dimensiones }}</span>
+            </div>
+            {% endif %}
+
+            {% if hallazgo.peso %}
+            <div class="detail-item">
+                <strong>Peso</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.peso }} gramos</span>
+            </div>
+            {% endif %}
+
+            {% if hallazgo.datacion %}
+            <div class="detail-item">
+                <strong>Datación/Periodo</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.datacion }}</span>
+            </div>
+            {% endif %}
+
+            {% if hallazgo.estado_conservacion %}
+            <div class="detail-item">
+                <strong>Estado de Conservación</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.estado_conservacion|title }}</span>
+            </div>
+            {% endif %}
+
+            {% if hallazgo.altitud %}
+            <div class="detail-item">
+                <strong>Altitud</strong><br>
+                <span style="color: var(--dark-secondary);">{{ hallazgo.altitud }} metros</span>
+            </div>
+            {% endif %}
+
+            {% if hallazgo.lat and hallazgo.lng %}
+            <div class="detail-item" style="grid-column: span 2;">
+                <strong>Coordenadas GPS</strong><br>
+                <span style="color: var(--dark-secondary); font-family: monospace;">{{ hallazgo.lat }}, {{ hallazgo.lng }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if hallazgo.proceso_extraccion %}
+        <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius);">
+            <h3>Proceso de Extracción</h3>
+            <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">
+                {{ hallazgo.proceso_extraccion }}
+            </p>
+        </div>
+        {% endif %}
+
+        {% if hallazgo.destino %}
+        <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius);">
+            <h3>Destino</h3>
+            <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">
+                {{ hallazgo.destino }}
+            </p>
+        </div>
+        {% endif %}
+
+        {% if hallazgo.notas %}
+        <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius);">
+            <h3>Notas Adicionales</h3>
+            <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">
+                {{ hallazgo.notas }}
+            </p>
+        </div>
+        {% endif %}
+
+        {% if hallazgo.encontrado_por %}
+        <div style="margin: 1.5rem 0; padding: 1rem; background: var(--info-color); color: white; border-radius: var(--border-radius);">
+            Encontrado por: <strong>{{ hallazgo.encontrado_por.nombre }} {{ hallazgo.encontrado_por.apellidos }}</strong>
+        </div>
+        {% endif %}
     </div>
 
-    <div class="aside-card">
-      <h4>🔑 Código de acceso</h4>
-      <div class="codigo-display">
-        <code>{{ hallazgo.codigo_acceso }}</code>
-        <button class="btn btn-xs btn-outline" onclick="navigator.clipboard.writeText('{{ hallazgo.codigo_acceso }}')">
-          📋 Copiar
-        </button>
-      </div>
-      <p class="text-muted small">Usa este código para localizar el hallazgo rápidamente.</p>
+    <div class="card">
+        <h2 style="margin-bottom: 1.5rem; border: none;">Comentarios ({{ comentarios|length }})</h2>
+
+        <form method="POST" action="/comentar_hallazgo/{{ hallazgo.id }}" style="margin-bottom: 2rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <textarea name="texto" class="form-control" rows="3" placeholder="Escribe un comentario..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Publicar Comentario</button>
+        </form>
+
+        {% if comentarios %}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% for comentario in comentarios %}
+            <div style="padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 3px solid var(--primary-color);">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                    <strong style="color: var(--primary-color);">{{ comentario.usuario.nombre_usuario }}</strong>
+                    <span style="color: var(--gray); font-size: var(--font-sm);">{{ comentario.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                <p style="margin: 0; color: var(--dark-secondary);">{{ comentario.texto }}</p>
+                {% if comentario.usuario_id == current_user.id or hallazgo.user_id == current_user.id %}
+                <form method="POST" action="/eliminar_comentario/{{ comentario.id }}" style="margin-top: 0.5rem;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: var(--font-sm);" onclick="return confirm('¿Eliminar este comentario?')">Eliminar</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: var(--gray); text-align: center; padding: 2rem;">No hay comentarios todavía. Sé el primero en comentar.</p>
+        {% endif %}
     </div>
-  </div>
 </div>
-
 {% endblock %}

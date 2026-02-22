@@ -1,141 +1,29 @@
 {% extends "base.html" %}
-{% block titulo %}UE {{ ue.numero_ue }} · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+{% block title %}Detalle de UE {{ ue.numero_ue }} - ArqueoTrack{% endblock %}
 
-{% block contenido %}
-<div class="page-header">
-  <div>
-    <a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}" class="breadcrumb">← UEs</a>
-    <h1>🧱 UE {{ ue.numero_ue }} <span class="badge badge-tipo-{{ ue.tipo }}">{{ ue.tipo | capitalize }}</span></h1>
-  </div>
-  <div class="actions">
-    <a href="{{ url_for('ue.harris', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-sm">🕸️ Matriz Harris</a>
-    <a href="{{ url_for('ue.editar', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" class="btn btn-secondary">✏️ Editar</a>
-  </div>
-</div>
-
-<div class="layout-2col">
-  <!-- Datos de la UE -->
-  <div>
+{% block content %}
+<div class="main-content">
     <div class="card">
-      <h3>📋 Datos estratigráficos</h3>
-      <dl class="data-list">
-        <dt>Descripción</dt><dd>{{ ue.descripcion or '—' }}</dd>
-        {% if ue.interpretacion %}<dt>Interpretación</dt><dd>{{ ue.interpretacion }}</dd>{% endif %}
-        {% if ue.color_munsell %}<dt>Color Munsell</dt><dd><code>{{ ue.color_munsell }}</code></dd>{% endif %}
-        {% if ue.textura %}<dt>Textura</dt><dd>{{ ue.textura }}</dd>{% endif %}
-        {% if ue.compactacion %}<dt>Compactación</dt><dd>{{ ue.compactacion }}</dd>{% endif %}
-        {% if ue.composicion %}<dt>Composición</dt><dd>{{ ue.composicion }}</dd>{% endif %}
-      </dl>
+        <h1>Unidad Estratigráfica {{ ue.numero_ue }}</h1>
+        <p><strong>Tipo:</strong> {{ ue.tipo | capitalize }}</p>
+        <p><strong>Descripción:</strong> {{ ue.descripcion }}</p>
+        <p><strong>Interpretación:</strong> {{ ue.interpretacion }}</p>
     </div>
 
-    <div class="card mt-2">
-      <h3>📐 Geometría</h3>
-      <dl class="data-list">
-        {% if ue.cota_superior is not none %}<dt>Cota superior</dt><dd>{{ '%.3f'|format(ue.cota_superior) }} m</dd>{% endif %}
-        {% if ue.cota_inferior is not none %}<dt>Cota inferior</dt><dd>{{ '%.3f'|format(ue.cota_inferior) }} m</dd>{% endif %}
-        {% if ue.cota_superior is not none and ue.cota_inferior is not none %}
-        <dt>Potencia</dt><dd>{{ '%.3f'|format(ue.cota_superior - ue.cota_inferior) }} m</dd>
-        {% endif %}
-        {% if ue.area_m2 %}<dt>Área</dt><dd>{{ '%.2f'|format(ue.area_m2) }} m²</dd>{% endif %}
-      </dl>
+    <div class="card" style="margin-top: 2rem;">
+        <h2>Relaciones Estratigráficas</h2>
+        <form action="{{ url_for('ue.añadir_relacion', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" method="POST">
+            {{ form_relacion.hidden_tag() }}
+            <div class="form-group">
+                <label>Relación con otra UE</label>
+                {{ form_relacion.ue_anterior_id(class="form-control") }}
+            </div>
+            <div class="form-group">
+                <label>Tipo</label>
+                {{ form_relacion.tipo_relacion(class="form-control") }}
+            </div>
+            <button type="submit" class="btn">Añadir Relación</button>
+        </form>
     </div>
-
-    <div class="card mt-2">
-      <h3>📌 Contexto</h3>
-      <dl class="data-list">
-        {% if ue.campana %}<dt>Campaña</dt><dd><a href="{{ url_for('campana.detalle', yacimiento_id=yacimiento.id, campana_id=ue.campana.id) }}">{{ ue.campana.nombre }} ({{ ue.campana.anio }})</a></dd>{% endif %}
-        {% if ue.sector %}<dt>Sector</dt><dd>{{ ue.sector.nombre }}</dd>{% endif %}
-        {% if ue.registrada_por %}<dt>Registrado por</dt><dd>{{ ue.registrada_por.nombre_completo }}</dd>{% endif %}
-        <dt>Fecha de registro</dt><dd>{{ ue.fecha_registro.strftime('%d/%m/%Y') }}</dd>
-      </dl>
-    </div>
-  </div>
-
-  <!-- Relaciones estratigráficas -->
-  <div>
-    <div class="card">
-      <h3>🔗 Relaciones estratigráficas</h3>
-      <p class="text-muted">Las relaciones expresan la secuencia temporal entre UEs según la Matriz de Harris.</p>
-
-      {% set relaciones_prev = ue.relaciones_anteriores.all() if ue.relaciones_anteriores else [] %}
-      {% set relaciones_post = ue.relaciones_posteriores.all() if ue.relaciones_posteriores else [] %}
-
-      {% if relaciones_prev %}
-      <h4>Esta UE es posterior a:</h4>
-      <ul>
-        {% for rel in relaciones_prev %}
-        <li>
-          <a href="{{ url_for('ue.detalle', yacimiento_id=yacimiento.id, ue_id=rel.ue_anterior.id) }}">UE {{ rel.ue_anterior.numero_ue }}</a>
-          — <span class="badge">{{ rel.tipo_relacion }}</span>
-          <form method="post" action="{{ url_for('ue.eliminar_relacion', yacimiento_id=yacimiento.id, ue_id=ue.id, relacion_id=rel.id) }}" style="display:inline" onsubmit="return confirm('¿Eliminar relación?')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn-link text-danger">✕</button>
-          </form>
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-
-      {% if relaciones_post %}
-      <h4>Esta UE es anterior a:</h4>
-      <ul>
-        {% for rel in relaciones_post %}
-        <li><a href="{{ url_for('ue.detalle', yacimiento_id=yacimiento.id, ue_id=rel.ue_posterior.id) }}">UE {{ rel.ue_posterior.numero_ue }}</a> — <span class="badge">{{ rel.tipo_relacion }}</span></li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-
-      <!-- Añadir relación -->
-      {% if form_relacion and form_relacion.ue_anterior_id.choices %}
-      <form method="post" action="{{ url_for('ue.añadir_relacion', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" class="mt-2">
-        {{ form_relacion.hidden_tag() }}
-        <div class="form-row">
-          {{ form_relacion.ue_anterior_id(class="form-control") }}
-          {{ form_relacion.tipo_relacion(class="form-control") }}
-          <button type="submit" class="btn btn-sm btn-primary">Añadir</button>
-        </div>
-      </form>
-      {% endif %}
-    </div>
-
-    <!-- Hallazgos asociados -->
-    <div class="card mt-2">
-      <h3>🏺 Hallazgos de esta UE</h3>
-      {% set hallazgos = ue.hallazgos.all() if ue.hallazgos else [] %}
-      {% if hallazgos %}
-      <ul>
-        {% for h in hallazgos %}
-        <li><a href="{{ url_for('hallazgo.detalle', yacimiento_id=yacimiento.id, id=h.id) }}">{{ h.codigo_acceso }} — {{ h.tipo or 'Sin tipo' }}</a></li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-muted">Ningún hallazgo vinculado a esta UE.</p>
-      {% endif %}
-    </div>
-
-    <!-- Muestras -->
-    <div class="card mt-2">
-      <h3>🧪 Muestras de esta UE</h3>
-      {% set muestras = ue.muestras.all() if ue.muestras else [] %}
-      {% if muestras %}
-      <ul>
-        {% for m in muestras %}
-        <li><a href="{{ url_for('muestra.detalle', yacimiento_id=yacimiento.id, muestra_id=m.id) }}"><code>{{ m.codigo }}</code> — {{ m.tipo | capitalize }}</a></li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-muted">No hay muestras tomadas de esta UE.</p>
-      {% endif %}
-    </div>
-
-    <!-- Eliminar -->
-    <div class="card card-danger mt-2">
-      <h3>⚠️ Zona peligrosa</h3>
-      <form method="post" action="{{ url_for('ue.eliminar', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" onsubmit="return confirm('¿Eliminar UE {{ ue.numero_ue }}? Esta acción es irreversible.')">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-danger">🗑️ Eliminar UE</button>
-      </form>
-    </div>
-  </div>
 </div>
 {% endblock %}

@@ -55,7 +55,17 @@ def nueva():
                 'descripcion': form.descripcion.data,
                 'sitio_web': form.sitio_web.data,
             }
-            inst = InstitucionService.crear(datos, current_user.id)
+            inst = InstitucionService.crear(
+                nombre=form.nombre.data,
+                tipo=form.tipo.data,
+                datos={
+                    'pais': form.pais.data,
+                    'ciudad': form.ciudad.data,
+                    'descripcion': form.descripcion.data,
+                    'sitio_web': form.web.data,
+                },
+                fundador_id=current_user.id
+            )
             AuditService.registrar('create', 'institucion', inst.id, datos_nuevos=inst.to_dict())
             flash(f'Institución "{inst.nombre}" creada. Estará disponible públicamente tras la verificación.', 'success')
             return redirect(url_for('institucion.detalle', inst_id=inst.id))

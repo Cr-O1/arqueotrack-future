@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Proceso - {{ yacimiento.nombre }}{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <h1>Proceso de Excavación</h1>
+            {% if puede_editar %}
+                <a href="/editar_proceso_yacimiento/{{ yacimiento.id }}" class="btn">Editar Proceso</a>
+            {% endif %}
+        </div>
+
+        <h2 style="color: var(--primary-color); border: none;">{{ yacimiento.nombre }}</h2>
+
+        <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius-lg); margin: 2rem 0;">
+            <div class="detail-item">
+                <strong>Responsable del Proyecto</strong><br>
+                <span style="color: var(--dark-secondary);">{{ yacimiento.responsable or 'No asignado' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Fecha de Inicio</strong><br>
+                <span style="color: var(--dark-secondary);">{{ yacimiento.fecha_inicio or 'No especificada' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Fecha de Fin</strong><br>
+                <span style="color: var(--dark-secondary);">
+                    {% if yacimiento.fecha_fin %}
+                        {{ yacimiento.fecha_fin }}
+                        <span class="badge badge-success" style="margin-left: 0.5rem;">Finalizado</span>
+                    {% else %}
+                        En progreso
+                        <span class="badge badge-info" style="margin-left: 0.5rem;">Activo</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Total de Hallazgos</strong><br>
+                <span style="color: var(--primary-color); font-size: 1.5rem; font-weight: bold;">{{ yacimiento.total_hallazgos }}</span>
+            </div>
+
+            {% if hallazgos_con_foto %}
+                <div class="detail-item">
+                    <strong>Hallazgos con Fotografía</strong><br>
+                    <span style="color: var(--success-color); font-size: 1.5rem; font-weight: bold;">{{ hallazgos_con_foto }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if yacimiento.descripcion %}
+            <div style="margin: 2rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--primary-color);">
+                <h3>Descripción del Yacimiento</h3>
+                <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">
+                    {{ yacimiento.descripcion }}
+                </p>
+            </div>
+        {% endif %}
+
+        <div style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; border: none;">Fases del Proyecto ({{ fases|length }})</h2>
+                {% if puede_crear %}
+                    <a href="/yacimiento/{{ yacimiento.id }}/fases/nueva" class="btn btn-success">➕ Nueva Fase</a>
+                {% endif %}
+            </div>
+
+            {% if fases %}
+                <div class="timeline-container" style="position: relative; padding-left: 3rem; margin-top: 2rem;">
+                    <div class="timeline-line" style="position: absolute; left: 1rem; top: 0; bottom: 0; width: 3px; background: var(--border-color);"></div>
+
+                    {% for fase in fases %}
+                        <div class="timeline-event" style="position: relative; margin-bottom: 2rem; padding: 1.5rem; background: var(--white); border-radius: var(--border-radius); box-shadow: var(--shadow);">
+                            <div style="position: absolute; left: -2.5rem; top: 1.5rem; width: 12px; height: 12px; border-radius: 50%; background: 
+                                {% if fase.estado == 'finalizada' %}var(--success-color)
+                                {% elif fase.estado == 'en_curso' %}var(--info-color)
+                                {% else %}var(--warning-color){% endif %}; 
+                                border: 3px solid var(--white); box-shadow: var(--shadow);"></div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <h3 style="color: var(--primary-color); margin: 0 0 0.5rem 0;">{{ fase.nombre }}</h3>
+                                    <span class="badge badge-{% if fase.estado == 'finalizada' %}success{% elif fase.estado == 'en_curso' %}info{% else %}warning{% endif %}">
+                                        {{ fase.estado|upper }}
+                                    </span>
+                                </div>
+                                <div style="text-align: right; color: var(--gray); font-size: var(--font-sm);">
+                                    {% if fase.fecha_inicio %}
+                                        <div>Inicio: {{ fase.fecha_inicio.strftime('%d/%m/%Y') }}</div>
+                                    {% endif %}
+                                    {% if fase.fecha_fin %}
+                                        <div>Fin: {{ fase.fecha_fin.strftime('%d/%m/%Y') }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if fase.descripcion %}
+                                <p style="color: var(--dark-secondary); line-height: 1.7; margin: 1rem 0;">
+                                    {{ fase.descripcion }}
+                                </p>
+                            {% endif %}
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius); font-size: var(--font-sm);">
+                                {% if fase.objetivos %}
+                                    <div>
+                                        <strong>Objetivos:</strong><br>
+                                        <span style="color: var(--gray);">{{ fase.objetivos[:100] }}{% if fase.objetivos|length > 100 %}...{% endif %}</span>
+                                    </div>
+                                {% endif %}
+                                {% if fase.responsable %}
+                                    <div>
+                                        <strong>Responsable:</strong><br>
+                                        <span style="color: var(--gray);">{{ fase.responsable.nombre_usuario }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if fase.presupuesto %}
+                                    <div>
+                                        <strong>Presupuesto:</strong><br>
+                                        <span style="color: var(--gray);">{{ "%.2f"|format(fase.presupuesto) }} €</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a href="/fase/{{ fase.id }}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: var(--font-sm);">Ver Detalles</a>
+                                {% if puede_editar %}
+                                    <a href="/editar_fase/{{ fase.id }}" class="btn" style="padding: 0.5rem 1rem; font-size: var(--font-sm);">Editar</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                    <h3>No hay fases registradas</h3>
+                    <p style="color: var(--gray); margin-bottom: 2rem;">Organiza el proyecto en fases para un mejor seguimiento</p>
+                    {% if puede_crear %}
+                        <a href="/yacimiento/{{ yacimiento.id }}/fases/nueva" class="btn btn-success">➕ Crear Primera Fase</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="button-group" style="margin-top: 3rem;">
+            <a href="/yacimiento/{{ yacimiento.id }}" class="btn">← Volver al Yacimiento</a>
+            <a href="/yacimiento/{{ yacimiento.id }}/fases" class="btn btn-info">Ver Todas las Fases</a>
+            <a href="/yacimiento/{{ yacimiento.id }}/timeline" class="btn btn-info">Ver Timeline</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

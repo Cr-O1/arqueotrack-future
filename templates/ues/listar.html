@@ -1,59 +1,37 @@
 {% extends "base.html" %}
-{% block titulo %}UEs · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+{% block title %}UEs - {{ yacimiento.nombre }}{% endblock %}
 
-{% block contenido %}
-<div class="page-header">
-  <div>
-    <a href="{{ url_for('yacimiento.detalle', id=yacimiento.id) }}" class="breadcrumb">← {{ yacimiento.nombre }}</a>
-    <h1>🧱 Unidades Estratigráficas</h1>
-  </div>
-  <div class="actions">
-    <a href="{{ url_for('ue.harris', yacimiento_id=yacimiento.id) }}" class="btn btn-secondary">🕸️ Matriz de Harris</a>
-    <a href="{{ url_for('ue.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Nueva UE</a>
-  </div>
-</div>
+{% block content %}
+<div class="main-content">
+    <div class="header-section">
+        <h1>Unidades Estratigráficas (UEs)</h1>
+        <div class="actions">
+            <a href="{{ url_for('ue.nueva', yacimiento_id=yacimiento.id) }}" class="btn">Nueva UE</a>
+            <a href="{{ url_for('ue.harris', yacimiento_id=yacimiento.id) }}" class="btn btn-secondary">Matriz de Harris</a>
+        </div>
+    </div>
 
-{% if ues %}
-<div class="tabla-container">
-  <table class="tabla tabla-ues">
-    <thead>
-      <tr>
-        <th>Nº UE</th>
-        <th>Tipo</th>
-        <th>Descripción</th>
-        <th>Color Munsell</th>
-        <th>Campaña</th>
-        <th>Sector</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ue in ues %}
-      <tr>
-        <td><strong>UE {{ ue.numero_ue }}</strong></td>
-        <td><span class="badge badge-tipo-{{ ue.tipo }}">{{ ue.tipo | capitalize }}</span></td>
-        <td>{{ ue.descripcion | truncate(80) }}</td>
-        <td>
-          {% if ue.color_munsell %}
-          <code>{{ ue.color_munsell }}</code>
-          {% else %}—{% endif %}
-        </td>
-        <td>{% if ue.campana %}{{ ue.campana.anio }} · {{ ue.campana.nombre }}{% else %}—{% endif %}</td>
-        <td>{% if ue.sector %}{{ ue.sector.nombre }}{% else %}—{% endif %}</td>
-        <td>
-          <a href="{{ url_for('ue.detalle', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" class="btn btn-sm btn-outline">Ver</a>
-          <a href="{{ url_for('ue.editar', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" class="btn btn-sm btn-secondary">✏️</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nº UE</th>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ue in ues %}
+            <tr>
+                <td><strong>{{ ue.numero_ue }}</strong></td>
+                <td>{{ ue.tipo | capitalize }}</td>
+                <td>{{ ue.descripcion[:100] }}...</td>
+                <td>
+                    <a href="{{ url_for('ue.detalle', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" class="btn btn-sm">Detalle</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
-{% else %}
-<div class="empty-state">
-  <p>No hay Unidades Estratigráficas registradas en este yacimiento.</p>
-  <p class="text-muted">Las UEs son los bloques fundamentales del registro arqueológico estratigráfico.</p>
-  <a href="{{ url_for('ue.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Registrar primera UE</a>
-</div>
-{% endif %}
 {% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Editar Proceso - {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Editar Proceso de Excavación</h1>
+        <p style="color: var(--gray); margin-bottom: 2rem;">
+            Actualiza la información del proceso de excavación del yacimiento "{{ yacimiento.nombre }}"
+        </p>
+
+        <form method="POST">
+            {{ formulario.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="responsable">Responsable del Proyecto</label>
+                {{ formulario.responsable(id="responsable", class="form-control", placeholder="Nombre del responsable") }}
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="form-group">
+                    <label for="fecha_inicio">Fecha de Inicio</label>
+                    {{ formulario.fecha_inicio(id="fecha_inicio", class="form-control") }}
+                </div>
+
+                <div class="form-group">
+                    <label for="fecha_fin">Fecha de Finalización</label>
+                    {{ formulario.fecha_fin(id="fecha_fin", class="form-control") }}
+                    <small style="color: var(--gray); font-size: var(--font-sm);">
+                        Deja en blanco si el proyecto está en curso
+                    </small>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    {{ formulario.esta_activo() }}
+                    <span>Proyecto en curso</span>
+                </label>
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Si está activo, la fecha de finalización se ignorará.
+                </small>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--info-color);">
+                <h3 style="color: var(--info-color); margin-bottom: 1rem;">Información del Proyecto</h3>
+                <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <strong>Total de hallazgos:</strong>
+                        <span style="color: var(--primary-color); font-size: 1.2rem; font-weight: bold;">
+                            {{ yacimiento.total_hallazgos }}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Estado:</strong>
+                        {% if yacimiento.fecha_fin %}
+                            <span class="badge badge-success">Finalizado</span>
+                        {% else %}
+                            <span class="badge badge-info">En Progreso</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <strong>📍 Ubicación:</strong>
+                        <span>{{ yacimiento.ubicacion or 'No especificada' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                {{ formulario.submit(class="btn", value="Guardar Cambios") }}
+                <a href="/proceso_yacimiento/{{ yacimiento.id }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

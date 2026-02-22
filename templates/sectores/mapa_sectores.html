@@ -1,89 +1,110 @@
 {% extends "base.html" %}
-{% block titulo %}Mapa de Sectores — {{ yacimiento.nombre }}{% endblock %}
 
-{% block head_extra %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+{% block title %}Mapa de Sectores - {{ yacimiento.nombre }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 {% endblock %}
 
-{% block contenido %}
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <h1>Mapa Interactivo de Sectores</h1>
+            <a href="/yacimiento/{{ yacimiento.id }}/sectores" class="btn btn-secondary">Volver a Sectores</a>
+        </div>
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
-  <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}">Sectores</a> ›
-  <span>Mapa</span>
-</nav>
+        <h2 style="color: var(--primary-color); border: none;">{{ yacimiento.nombre }}</h2>
+        <p style="color: var(--gray); margin: 1rem 0;">
+            Visualiza la distribución espacial de sectores y hallazgos en el yacimiento
+        </p>
 
-<div class="page-header">
-  <h1>🗺️ Mapa de sectores</h1>
-  <p class="text-muted">{{ yacimiento.nombre }}</p>
+        <!-- Leyenda -->
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); margin: 1.5rem 0;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 30px; height: 30px; background: #a0826d; border-radius: 50%; border: 3px solid white;"></div>
+                <span>Yacimiento</span>
+            </div>
+
+            {% if yacimiento.polygon_geojson %}
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 30px; height: 5px; background: #8b6f47; border: 2px dashed #a0826d;"></div>
+                <span>Perímetro del yacimiento</span>
+            </div>
+            {% endif %}
+
+            {% for sector in sectores_json %}
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 25px; height: 25px; background: {{ sector.color }}; border-radius: 50%; border: 2px solid white; opacity: 0.6;"></div>
+                <span>{{ sector.nombre }} ({{ sector.hallazgos_count }} hallazgos)</span>
+            </div>
+            {% endfor %}
+
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 15px; height: 15px; background: #f59e0b; border-radius: 50%; border: 2px solid white;"></div>
+                <span>Hallazgos</span>
+            </div>
+        </div>
+
+        <!-- Mapa -->
+        <div id="sectores-map" style="height: 600px; border-radius: var(--border-radius); border: 2px solid var(--border-color); box-shadow: var(--shadow-lg);"></div>
+
+        <!-- Instrucciones -->
+        <div style="margin-top: 1.5rem; padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--info-color);">
+            <h4 style="color: var(--info-color); margin-bottom: 0.5rem;">Cómo usar el mapa</h4>
+            <ul style="margin: 0; padding-left: 1.5rem; color: var(--dark-secondary);">
+                <li>Haz clic en cualquier marcador o área para ver información detallada</li>
+                <li>Los polígonos de colores representan los sectores definidos</li>
+                <li>Los círculos coloreados representan sectores con solo punto central</li>
+                <li>Los puntos pequeños representan hallazgos individuales</li>
+                <li>Usa los controles de zoom (+/-) para acercar o alejar</li>
+                <li>Arrastra el mapa para explorar diferentes áreas</li>
+            </ul>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stat-card">
+                <h3>{{ sectores_json|length }}</h3>
+                <p>Sectores Totales</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--success-color), #059669);">
+                <h3>{{ hallazgos_json|length }}</h3>
+                <p>Hallazgos Localizados</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #2563eb);">
+                <h3>{{ sectores_json|selectattr('polygon_geojson')|list|length }}</h3>
+                <p>Sectores con Perímetro</p>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--warning-color), #f59e0b);">
+                <h3>{{ (sectores_json|sum(attribute='area', start=0) / 10000)|round(2) }}</h3>
+                <p>Hectáreas Totales</p>
+            </div>
+        </div>
+    </div>
 </div>
-
-<div class="mapa-layout">
-  <div id="mapa" style="height:600px; border-radius:12px; border:1px solid var(--border)"></div>
-
-  <div class="mapa-leyenda">
-    <h4>Sectores</h4>
-    <ul class="leyenda-lista">
-      {% for s in sectores_json %}
-      <li>
-        <span class="leyenda-color" style="background:{{ s.color or '#6366F1' }}"></span>
-        {{ s.nombre }} <small class="text-muted">({{ s.total_hallazgos or 0 }} hallazgos)</small>
-      </li>
-      {% endfor %}
-    </ul>
-    <hr>
-    <p class="text-muted small">🏺 = Hallazgo georeferenciado</p>
-  </div>
-</div>
-
 {% endblock %}
 
-{% block scripts_extra %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+
 <script>
-const sectoresData = {{ sectores_json | tojson }};
-const hallazgosData = {{ hallazgos_json | tojson }};
+document.addEventListener('DOMContentLoaded', function() {
+    const yacimiento = {
+        lat: {{ yacimiento.lat or 40.4168 }},
+        lng: {{ yacimiento.lng or -3.7038 }},
+        nombre: "{{ yacimiento.nombre }}",
+        polygon_geojson: {{ yacimiento.polygon_geojson|tojson|safe if yacimiento.polygon_geojson else 'null' }}
+    };
 
-const center = sectoresData.length > 0 && sectoresData[0].lat
-  ? [sectoresData[0].lat, sectoresData[0].lng]
-  : (hallazgosData.length > 0 && hallazgosData[0].lat
-      ? [hallazgosData[0].lat, hallazgosData[0].lng]
-      : [40.416775, -3.703790]);
+    const sectores = {{ sectores_json|tojson|safe }};
+    const hallazgos = {{ hallazgos_json|tojson|safe }};
 
-const map = L.map('mapa').setView(center, 16);
+    console.log('Inicializando mapa con:', { yacimiento, sectores, hallazgos });
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors'
-}).addTo(map);
-
-// Dibujar sectores
-sectoresData.forEach(s => {
-  const color = s.color || '#6366F1';
-
-  if (s.polygon_geojson) {
-    try {
-      const geo = typeof s.polygon_geojson === 'string' ? JSON.parse(s.polygon_geojson) : s.polygon_geojson;
-      L.geoJSON(geo, {
-        style: { color, fillColor: color, fillOpacity: 0.2, weight: 2 }
-      }).bindPopup(`<strong>${s.nombre}</strong><br>${s.descripcion || ''}`).addTo(map);
-    } catch (e) {}
-  }
-
-  if (s.lat && s.lng) {
-    L.circleMarker([s.lat, s.lng], { color, radius: 8, fillOpacity: 0.8 })
-      .bindPopup(`<strong>${s.nombre}</strong><br>${s.descripcion || ''}`)
-      .addTo(map);
-  }
-});
-
-// Dibujar hallazgos
-hallazgosData.forEach(h => {
-  if (!h.lat || !h.lng) return;
-  L.marker([h.lat, h.lng], {
-    icon: L.divIcon({ html: '🏺', className: 'leaflet-emoji-icon', iconSize: [24, 24] })
-  })
-  .bindPopup(`<strong>${h.codigo_acceso}</strong><br>${h.tipo || ''}<br><a href="/hallazgo/${h.id}">Ver ficha</a>`)
-  .addTo(map);
+    initSectoresMap(yacimiento, sectores, hallazgos);
 });
 </script>
 {% endblock %}

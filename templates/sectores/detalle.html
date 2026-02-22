@@ -1,77 +1,210 @@
 {% extends "base.html" %}
-{% block titulo %}{{ sector.nombre }} — ArqueoTrack{% endblock %}
-{% block contenido %}
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=sector.yacimiento_id) }}">{{ sector.yacimiento.nombre }}</a> ›
-  <a href="{{ url_for('sector.listar', yacimiento_id=sector.yacimiento_id) }}">Sectores</a> ›
-  <span>{{ sector.nombre }}</span>
-</nav>
+{% block title %}Sector {{ sector.nombre }} - ArqueoTrack{% endblock %}
 
-<div class="page-header">
-  <div>
-    <h1 style="border-left: 5px solid {{ sector.color or '#6366F1' }}; padding-left:12px">
-      📐 {{ sector.nombre }}
-    </h1>
-    <p class="text-muted">{{ sector.yacimiento.nombre }}</p>
-  </div>
-  <a href="{{ url_for('sector.editar', sector_id=sector.id) }}" class="btn btn-outline">✏️ Editar sector</a>
-</div>
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
 
-<div class="detalle-layout">
-  <div class="detalle-main">
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="margin-bottom: 0.5rem; color: {{ sector.color or '#6366f1' }};">{{ sector.nombre }}</h1>
+                <p style="color: var(--gray); margin: 0;">
+                    Sector del yacimiento <a href="/yacimiento/{{ sector.yacimiento_id }}" style="color: var(--primary-color);">{{ sector.yacimiento.nombre }}</a>
+                </p>
+                {% if sector.polygon_geojson %}
+                    <p style="margin-top: 0.5rem;">
+                        <span class="badge badge-success">📐 Perímetro Definido</span>
+                    </p>
+                {% endif %}
+            </div>
+            <div class="button-group" style="margin: 0;">
+                <a href="/editar_sector/{{ sector.id }}" class="btn">Editar</a>
+                <a href="/yacimiento/{{ sector.yacimiento_id }}/sectores" class="btn btn-secondary">Volver a Sectores</a>
+            </div>
+        </div>
 
-    {% if sector.descripcion %}
-    <div class="info-card">
-      <h3>Descripción</h3>
-      <p>{{ sector.descripcion }}</p>
-    </div>
-    {% endif %}
-
-    <!-- Hallazgos del sector -->
-    <div class="info-card">
-      <div class="card-header-row">
-        <h3>Hallazgos ({{ sector.hallazgos.count() }})</h3>
-        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=sector.yacimiento_id) }}" class="btn btn-sm btn-primary">+ Añadir</a>
-      </div>
-      {% if sector.hallazgos.count() > 0 %}
-      <table class="table">
-        <thead>
-          <tr><th>Código</th><th>Tipo</th><th>Material</th><th>Datación</th><th></th></tr>
-        </thead>
-        <tbody>
-          {% for h in sector.hallazgos %}
-          <tr>
-            <td><code>{{ h.codigo_acceso }}</code></td>
-            <td>{{ h.tipo or '—' }}</td>
-            <td>{{ h.material or '—' }}</td>
-            <td>{{ h.datacion or '—' }}</td>
-            <td><a href="{{ url_for('hallazgo.detalle', hallazgo_id=h.id) }}" class="btn btn-xs btn-outline">Ver</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p class="text-muted">Sin hallazgos en este sector.</p>
-      {% endif %}
-    </div>
-
-  </div>
-
-  <div class="detalle-aside">
-    <div class="aside-card">
-      <h4>Datos del sector</h4>
-      <dl class="data-list">
-        {% if sector.area %}
-        <dt>Área</dt><dd>{{ sector.area | int }} m²</dd>
+        {% if sector.descripcion %}
+            <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid {{ sector.color or '#6366f1' }};">
+                <h3>Descripción</h3>
+                <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">
+                    {{ sector.descripcion }}
+                </p>
+            </div>
         {% endif %}
+
+        <div class="detail-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius-lg);">
+            <div class="detail-item">
+                <strong>Nombre/Código</strong><br>
+                <span style="color: {{ sector.color or '#6366f1' }}; font-weight: bold;">{{ sector.nombre }}</span>
+            </div>
+
+            {% if sector.area %}
+                <div class="detail-item">
+                    <strong>Área</strong><br>
+                    <span style="color: var(--dark-secondary);">
+                        {% if sector.area >= 10000 %}
+                            {{ "%.2f"|format(sector.area / 10000) }} ha ({{ "%.0f"|format(sector.area) }} m²)
+                        {% else %}
+                            {{ "%.2f"|format(sector.area) }} m²
+                        {% endif %}
+                        {% if sector.polygon_geojson %}
+                            <span style="margin-left: 0.5rem; padding: 0.15rem 0.4rem; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 0.75rem;">Calculada</span>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+
+            <div class="detail-item">
+                <strong>Hallazgos en este sector</strong><br>
+                <span style="color: var(--dark-secondary);">{{ sector.total_hallazgos }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Color en mapa</strong><br>
+                <span style="display: inline-block; width: 24px; height: 24px; background: {{ sector.color or '#6366f1' }}; border-radius: 4px; vertical-align: middle; border: 2px solid var(--border-color);"></span>
+                <span style="color: var(--gray); font-family: monospace; margin-left: 0.5rem;">{{ sector.color or '#6366f1' }}</span>
+            </div>
+
+            {% if sector.lat and sector.lng %}
+                <div class="detail-item" style="grid-column: span 2;">
+                    <strong>Coordenadas GPS</strong><br>
+                    <span style="color: var(--dark-secondary); font-family: monospace;">{{ sector.lat }}, {{ sector.lng }}</span>
+                    {% if sector.polygon_geojson %}
+                        <span style="margin-left: 1rem; padding: 0.25rem 0.5rem; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 0.875rem;">Perímetro definido</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
         {% if sector.lat and sector.lng %}
-        <dt>Coordenadas</dt><dd>{{ "%.5f" | format(sector.lat) }}, {{ "%.5f" | format(sector.lng) }}</dd>
+            <div style="margin-top: 2rem;">
+                <h3>Ubicación en el Mapa</h3>
+                <div id="sector-map" style="height: 400px; border-radius: var(--border-radius); box-shadow: var(--shadow);"></div>
+            </div>
         {% endif %}
-        <dt>Total hallazgos</dt><dd>{{ sector.hallazgos.count() }}</dd>
-      </dl>
     </div>
-  </div>
-</div>
 
+    {% if sector.hallazgos %}
+        <div class="card">
+            <h2 style="margin-bottom: 1.5rem; border: none;">Hallazgos en este Sector ({{ sector.total_hallazgos }})</h2>
+
+            <div class="yacimientos-grid">
+                {% for hallazgo in sector.hallazgos %}
+                    <div class="yacimiento-card">
+                        {% if hallazgo.foto %}
+                            <div style="margin-bottom: 1rem;">
+                                <img src="/uploads/{{ hallazgo.foto }}" 
+                                     alt="Foto del hallazgo"
+                                     style="width: 100%; height: 150px; object-fit: cover; border-radius: var(--border-radius);">
+                            </div>
+                        {% endif %}
+
+                        <h3>{{ hallazgo.codigo_acceso }}</h3>
+                        <p style="color: var(--gray);">{{ hallazgo.tipo|title if hallazgo.tipo else 'Sin clasificar' }}</p>
+
+                        {% if hallazgo.descripcion %}
+                            <p style="color: var(--dark-secondary); margin: 0.5rem 0;">
+                                {{ hallazgo.descripcion[:100] }}{% if hallazgo.descripcion|length > 100 %}...{% endif %}
+                            </p>
+                        {% endif %}
+
+                        {% if hallazgo.fecha %}
+                            <p style="color: var(--gray); font-size: var(--font-sm); margin-top: 0.5rem;">
+                                <strong>Fecha:</strong> {{ hallazgo.fecha }}
+                            </p>
+                        {% endif %}
+
+                        <a href="/hallazgo/{{ hallazgo.id }}" class="btn" style="margin-top: 1rem;">Ver Detalle</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="card">
+            <div style="text-align: center; padding: 3rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                <h3>No hay hallazgos en este sector</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">Los hallazgos encontrados en este sector aparecerán aquí</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if sector.lat and sector.lng %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const map = L.map('sector-map').setView([{{ sector.lat }}, {{ sector.lng }}], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        const sectorColor = '{{ sector.color or "#6366f1" }}';
+        const existingPolygon = {{ sector.polygon_geojson|tojson|safe if sector.polygon_geojson else 'null' }};
+
+        // Si hay polígono, dibujarlo
+        if (existingPolygon) {
+            try {
+                let geojsonData = existingPolygon;
+                if (typeof existingPolygon === 'string') {
+                    geojsonData = JSON.parse(existingPolygon);
+                }
+
+                const polygon = L.geoJSON(geojsonData, {
+                    style: {
+                        color: sectorColor,
+                        fillColor: sectorColor,
+                        fillOpacity: 0.3,
+                        weight: 3
+                    }
+                }).addTo(map);
+
+                polygon.bindPopup('<strong>{{ sector.nombre }}</strong><br>Área: {{ "%.2f"|format(sector.area) if sector.area else "N/A" }} m²');
+
+                map.fitBounds(polygon.getBounds().pad(0.1));
+            } catch (e) {
+                console.error('Error al cargar polígono:', e);
+                // Fallback a círculo
+                dibujarCirculo();
+            }
+        } else {
+            // Dibujar círculo si no hay polígono
+            dibujarCirculo();
+        }
+
+        function dibujarCirculo() {
+            const radius = Math.sqrt({{ sector.area or 100 }}) * 5;
+            L.circle([{{ sector.lat }}, {{ sector.lng }}], {
+                radius: radius,
+                color: sectorColor,
+                fillColor: sectorColor,
+                fillOpacity: 0.3,
+                weight: 3
+            }).addTo(map).bindPopup('<strong>{{ sector.nombre }}</strong>');
+        }
+
+        // Agregar hallazgos al mapa
+        {% for hallazgo in sector.hallazgos %}
+            {% if hallazgo.lat and hallazgo.lng %}
+                L.marker([{{ hallazgo.lat }}, {{ hallazgo.lng }}], {
+                    icon: L.divIcon({
+                        className: 'hallazgo-marker',
+                        html: '<div style="background: ' + sectorColor + '; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    })
+                }).addTo(map).bindPopup('<strong>🏺 {{ hallazgo.tipo }}</strong><br>{{ hallazgo.codigo_acceso }}');
+            {% endif %}
+        {% endfor %}
+    });
+    </script>
+{% endif %}
 {% endblock %}

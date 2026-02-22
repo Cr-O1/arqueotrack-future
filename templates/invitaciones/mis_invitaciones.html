@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Mis Invitaciones - ArqueoTrack{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <h1>Mis Invitaciones Pendientes</h1>
+        <p style="color: var(--gray); margin-bottom: 2rem;">
+            Aquí puedes ver y gestionar las invitaciones que has recibido para colaborar en proyectos arqueológicos
+        </p>
+
+        {% if invitaciones %}
+            <div class="stats-grid" style="margin-bottom: 2rem;">
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--warning-color), #f59e0b);">
+                    <h3>{{ invitaciones|length }}</h3>
+                    <p>Invitaciones Pendientes</p>
+                </div>
+            </div>
+
+            <div style="display: grid; gap: 1.5rem;">
+                {% for invitacion in invitaciones %}
+                <div class="card" style="border-left: 4px solid var(--warning-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; color: var(--primary-color);">{{ invitacion.yacimiento.nombre }}</h3>
+                            <p style="margin: 0.5rem 0; color: var(--gray);">
+                                {{ invitacion.yacimiento.ubicacion or 'Sin ubicación especificada' }}
+                            </p>
+                            <span class="badge badge-info">
+                                Rol: {{ invitacion.rol|upper }}
+                            </span>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <form method="POST" action="/aceptar_invitacion/{{ invitacion.id }}" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-success">
+                                    Aceptar
+                                </button>
+                            </form>
+                            <form method="POST" action="/rechazar_invitacion/{{ invitacion.id }}" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger">
+                                    Rechazar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="detail-grid" style="margin-top: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: var(--font-sm); color: var(--gray);">
+                        <div><strong>Invitado por:</strong> {{ invitacion.invitado_por.nombre_usuario }}</div>
+                        <div><strong>Fecha:</strong> {{ invitacion.fecha_envio.strftime('%d/%m/%Y %H:%M') }}</div>
+                    </div>
+
+                    {% if invitacion.mensaje %}
+                    <div style="margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                        <strong>Mensaje:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--dark-secondary);">{{ invitacion.mensaje }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: var(--border-radius); font-size: var(--font-sm);">
+                        <strong style="color: var(--info-color);">Sobre este rol:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--dark-secondary);">
+                            {% if invitacion.rol == 'visualizador' %}
+                                Solo podrás ver la información del yacimiento y sus hallazgos.
+                            {% elif invitacion.rol == 'editor' %}
+                                Podrás editar información existente pero no crear ni eliminar elementos.
+                            {% elif invitacion.rol == 'colaborador' %}
+                                Podrás crear, editar y comentar, pero no eliminar elementos.
+                            {% elif invitacion.rol == 'asistente' %}
+                                Tendrás acceso completo excepto eliminar el yacimiento principal.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 3rem; background: var(--light-gray); border-radius: var(--border-radius-lg);">
+                <h3>No tienes invitaciones pendientes</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">
+                    Cuando alguien te invite a colaborar en un proyecto, aparecerá aquí
+                </p>
+                <a href="/inicio" class="btn">Ir al Inicio</a>
+            </div>
+        {% endif %}
+
+        <a href="/inicio" class="btn btn-secondary" style="margin-top: 2rem;">← Volver al Inicio</a>
+    </div>
+</div>
+{% endblock %}

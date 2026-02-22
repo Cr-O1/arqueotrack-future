@@ -1,103 +1,29 @@
 {% extends "base.html" %}
-{% block titulo %}{{ title }} · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+{% block title %}{{ title }} - ArqueoTrack{% endblock %}
 
-{% block contenido %}
-<div class="page-header">
-  <div>
-    <a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}" class="breadcrumb">← UEs</a>
-    <h1>🧱 {{ title }}</h1>
-  </div>
-</div>
-
-<div class="card form-card">
-  <form method="post" novalidate>
-    {{ form.hidden_tag() }}
-
-    <div class="form-row">
-      <div class="form-group form-group-sm">
-        <label>Número UE <span class="text-muted">(sugerido: {{ siguiente }})</span></label>
-        {{ form.numero_ue(class="form-control", type="number", min="1") }}
-        {% for err in form.numero_ue.errors %}<span class="error">{{ err }}</span>{% endfor %}
-      </div>
-      <div class="form-group">
-        {{ form.tipo.label }}
-        {{ form.tipo(class="form-control") }}
-        {% for err in form.tipo.errors %}<span class="error">{{ err }}</span>{% endfor %}
-      </div>
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>{{ title }}</h1>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                <label>{{ form.numero_ue.label }} (Sugerido: {{ siguiente }})</label>
+                {{ form.numero_ue(class="form-control", value=form.numero_ue.data or siguiente) }}
+            </div>
+            <div class="form-group">
+                <label>{{ form.tipo.label }}</label>
+                {{ form.tipo(class="form-control") }}
+            </div>
+            <div class="form-group">
+                <label>{{ form.descripcion.label }}</label>
+                {{ form.descripcion(class="form-control") }}
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn">Guardar UE</button>
+                <a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
     </div>
-
-    <div class="form-group">
-      {{ form.descripcion.label }}
-      {{ form.descripcion(class="form-control", rows=3, placeholder="Descripción estratigráfica detallada…") }}
-      {% for err in form.descripcion.errors %}<span class="error">{{ err }}</span>{% endfor %}
-    </div>
-
-    <div class="form-group">
-      {{ form.interpretacion.label }}
-      {{ form.interpretacion(class="form-control", rows=2, placeholder="Interpretación funcional de la unidad…") }}
-    </div>
-
-    <fieldset class="form-fieldset">
-      <legend>Propiedades sedimentarias</legend>
-      <div class="form-row">
-        <div class="form-group">
-          {{ form.color_munsell.label }}
-          {{ form.color_munsell(class="form-control", placeholder="10YR 4/4…") }}
-          <small>Código Munsell estándar</small>
-        </div>
-        <div class="form-group">
-          {{ form.textura.label }}
-          {{ form.textura(class="form-control") }}
-        </div>
-        <div class="form-group">
-          {{ form.compactacion.label }}
-          {{ form.compactacion(class="form-control") }}
-        </div>
-      </div>
-      <div class="form-group">
-        {{ form.composicion.label }}
-        {{ form.composicion(class="form-control", rows=2, placeholder="Piedras, cerámicas, carbones, huesos…") }}
-      </div>
-    </fieldset>
-
-    <fieldset class="form-fieldset">
-      <legend>Geometría</legend>
-      <div class="form-row">
-        <div class="form-group">
-          {{ form.cota_superior.label }}
-          {{ form.cota_superior(class="form-control", step="0.001", placeholder="msnm") }}
-        </div>
-        <div class="form-group">
-          {{ form.cota_inferior.label }}
-          {{ form.cota_inferior(class="form-control", step="0.001", placeholder="msnm") }}
-        </div>
-        <div class="form-group">
-          {{ form.area_m2.label }}
-          {{ form.area_m2(class="form-control", step="0.01", placeholder="m²") }}
-        </div>
-      </div>
-    </fieldset>
-
-    <fieldset class="form-fieldset">
-      <legend>Contexto</legend>
-      <div class="form-row">
-        <div class="form-group">
-          {{ form.campana_id.label }}
-          {{ form.campana_id(class="form-control") }}
-        </div>
-        <div class="form-group">
-          {{ form.sector_id.label }}
-          {{ form.sector_id(class="form-control") }}
-        </div>
-      </div>
-    </fieldset>
-
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">
-        {% if ue %}Guardar cambios{% else %}Crear UE{% endif %}
-      </button>
-      <a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
-    </div>
-  </form>
 </div>
 {% endblock %}

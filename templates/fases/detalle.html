@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ fase.nombre }} - ArqueoTrack{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h1>{{ fase.nombre }}</h1>
+                <p style="margin: 0.5rem 0;">
+                    <span class="badge badge-{% if fase.estado == 'finalizada' %}success{% elif fase.estado == 'activa' %}info{% else %}warning{% endif %}">
+                        {{ fase.estado|upper }}
+                    </span>
+                </p>
+                <p style="color: var(--gray); margin-top: 0.5rem;">
+                    Yacimiento: <a href="/yacimiento/{{ fase.yacimiento.id }}" style="color: var(--primary-color); text-decoration: none;">{{ fase.yacimiento.nombre }}</a>
+                </p>
+            </div>
+            <div class="button-group" style="margin: 0;">
+                <a href="/editar_fase/{{ fase.id }}" class="btn">Editar</a>
+                <a href="/yacimiento/{{ fase.yacimiento_id }}/fases" class="btn btn-secondary">Volver a Fases</a>
+                <form method="POST" action="/eliminar_fase/{{ fase.id }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar esta fase?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger">Eliminar Fase</button>
+        </form>
+            </div>
+        </div>
+
+        {% if fase.descripcion %}
+        <div style="margin: 2rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--primary-color);">
+            <h3>Descripción</h3>
+            <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">{{ fase.descripcion }}</p>
+        </div>
+        {% endif %}
+
+        <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius-lg);">
+            <div class="detail-item">
+                <strong>Fecha de Inicio</strong><br>
+                <span style="color: var(--dark-secondary);">{{ fase.fecha_inicio.strftime('%d/%m/%Y') if fase.fecha_inicio else 'No especificada' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Fecha de Fin</strong><br>
+                <span style="color: var(--dark-secondary);">{{ fase.fecha_fin.strftime('%d/%m/%Y') if fase.fecha_fin else 'No especificada' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Responsable</strong><br>
+                <span style="color: var(--dark-secondary);">{{ fase.responsable.nombre_usuario if fase.responsable else 'No asignado' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Orden en el Proyecto</strong><br>
+                <span style="color: var(--dark-secondary);">Fase {{ fase.orden }}</span>
+            </div>
+        </div>
+
+        {% if fase.notas %}
+        <div style="margin: 2rem 0;">
+            <h3>Notas</h3>
+            <p style="color: var(--dark-secondary); line-height: 1.7; background: var(--light-gray); padding: 1.5rem; border-radius: var(--border-radius);">
+                {{ fase.notas }}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if eventos %}
+    <div class="card">
+        <h2>Eventos Relacionados ({{ eventos|length }})</h2>
+
+        <div class="timeline-container" style="margin-top: 2rem;">
+            <div class="timeline-line"></div>
+
+            {% for evento in eventos %}
+            <div class="timeline-event">
+                <div class="timeline-dot"></div>
+
+                <div class="timeline-header">
+                    <strong class="timeline-title">{{ evento.titulo }}</strong>
+                    <span class="timeline-date">{{ evento.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+
+                <div class="timeline-description">
+                    <p>{{ evento.descripcion }}</p>
+                </div>
+
+                <div class="timeline-meta">
+                    <span>Tipo: {% if evento.tipo == 'hallazgo' %}Hallazgo{% elif evento.tipo == 'reunion' %}Reunión{% elif evento.tipo == 'analisis' %}Análisis{% elif evento.tipo == 'cambio_estado' %}Cambio de Estado{% elif evento.tipo == 'decision' %}Decisión{% elif evento.tipo == 'visita' %}Visita{% elif evento.tipo == 'entrega' %}Entrega{% else %}Otro{% endif %}</span>
+                    {% if evento.usuario %}
+                    <span>{{ evento.usuario.nombre_usuario }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

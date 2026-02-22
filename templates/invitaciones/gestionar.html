@@ -1,88 +1,126 @@
 {% extends "base.html" %}
-{% block titulo %}Gestionar Invitaciones — {{ yacimiento.nombre }}{% endblock %}
-{% block contenido %}
+{% block title %}Invitaciones - {{ yacimiento.nombre }}{% endblock %}
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
-  <span>Invitaciones</span>
-</nav>
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <h1>Gestión de Invitaciones</h1>
+            <a href="/yacimiento/{{ yacimiento.id }}/invitar" class="btn btn-success">Enviar Invitación</a>
+        </div>
 
-<div class="page-header">
-  <div>
-    <h1>👥 Gestionar equipo</h1>
-    <p class="text-muted">{{ invitaciones | length }} invitación{{ 'es' if invitaciones | length != 1 }}</p>
-  </div>
-  <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">+ Invitar colaborador</a>
+        <h2 style="color: var(--primary-color); border: none;">{{ yacimiento.nombre }}</h2>
+
+        <p style="color: var(--gray); margin: 1rem 0;">
+            Gestiona quién tiene acceso a este yacimiento y con qué nivel de permisos
+        </p>
+
+        {% if invitaciones %}
+            <div class="stats-grid" style="margin: 2rem 0;">
+                <div class="stat-card">
+                    <h3>{{ invitaciones|length }}</h3>
+                    <p>Total Invitaciones</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--warning-color), #f59e0b);">
+                    <h3>{{ invitaciones|selectattr('estado', 'equalto', 'pendiente')|list|length }}</h3>
+                    <p>Pendientes</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--success-color), #059669);">
+                    <h3>{{ invitaciones|selectattr('estado', 'equalto', 'aceptada')|list|length }}</h3>
+                    <p>Aceptadas</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--danger-color), #dc2626);">
+                    <h3>{{ invitaciones|selectattr('estado', 'equalto', 'rechazada')|list|length }}</h3>
+                    <p>Rechazadas</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                {% for invitacion in invitaciones|sort(attribute='fecha_envio', reverse=True) %}
+                <div class="card" style="margin-bottom: 1rem; border-left: 4px solid 
+                    {% if invitacion.estado == 'aceptada' %}var(--success-color)
+                    {% elif invitacion.estado == 'rechazada' %}var(--danger-color)
+                    {% else %}var(--warning-color){% endif %};">
+
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0;">{{ invitacion.email }}</h3>
+                            <p style="margin: 0.5rem 0;">
+                                <span class="badge badge-{% if invitacion.estado == 'aceptada' %}success{% elif invitacion.estado == 'rechazada' %}danger{% else %}warning{% endif %}">
+                                    {{ invitacion.estado|upper }}
+                                </span>
+                                <span class="badge badge-info" style="margin-left: 0.5rem;">
+                                    {{ invitacion.rol|upper }}
+                                </span>
+                            </p>
+                        </div>
+
+                        {% if invitacion.estado == 'pendiente' %}
+                        <form method="POST" action="/revocar_invitacion/{{ invitacion.id }}" style="display: inline;" onsubmit="return confirm('¿Cancelar esta invitación?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.5rem 1rem;">
+                                Cancelar Invitación
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <div class="detail-grid" style="margin-top: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: var(--font-sm); color: var(--gray);">
+                        <div><strong>Invitado por:</strong> {{ invitacion.invitado_por.nombre_usuario }}</div>
+                        <div><strong>Fecha invitación:</strong> {{ invitacion.fecha_envio.strftime('%d/%m/%Y %H:%M') }}</div>
+                        {% if invitacion.fecha_respuesta %}
+                        <div><strong>Fecha respuesta:</strong> {{ invitacion.fecha_respuesta.strftime('%d/%m/%Y %H:%M') }}</div>
+                        {% endif %}
+                        {% if invitacion.invitado %}
+                        <div><strong>Usuario:</strong> {{ invitacion.invitado.nombre_usuario }}</div>
+                        {% endif %}
+                    </div>
+
+                    {% if invitacion.mensaje %}
+                    <div style="margin-top: 1rem; padding: 1rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                        <strong>Mensaje:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--dark-secondary);">{{ invitacion.mensaje }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 3rem; background: var(--light-gray); border-radius: var(--border-radius-lg); margin-top: 2rem;">
+
+                <h3>No hay invitaciones</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">
+                    Invita a miembros de tu equipo para colaborar en este yacimiento
+                </p>
+                <a href="/yacimiento/{{ yacimiento.id }}/invitar" class="btn btn-success">
+                    Enviar Primera Invitación
+                </a>
+            </div>
+        {% endif %}
+
+        <div style="margin-top: 3rem; padding: 2rem; background: var(--light-gray); border-radius: var(--border-radius-lg); border-left: 4px solid var(--info-color);">
+            <h3 style="color: var(--info-color); margin-bottom: 1rem;">Información sobre Roles</h3>
+            <div style="display: grid; gap: 1rem;">
+                <div>
+                    <strong style="color: var(--primary-color);">Visualizador:</strong>
+                    <span style="color: var(--dark-secondary);"> Solo puede ver la información del yacimiento y sus hallazgos</span>
+                </div>
+                <div>
+                    <strong style="color: var(--primary-color);">Editor:</strong>
+                    <span style="color: var(--dark-secondary);"> Puede editar información existente pero no crear ni eliminar</span>
+                </div>
+                <div>
+                    <strong style="color: var(--primary-color);">Colaborador:</strong>
+                    <span style="color: var(--dark-secondary);"> Puede crear, editar y comentar, pero no eliminar</span>
+                </div>
+                <div>
+                    <strong style="color: var(--primary-color);">Asistente:</strong>
+                    <span style="color: var(--dark-secondary);"> Acceso completo excepto eliminar el yacimiento</span>
+                </div>
+            </div>
+        </div>
+
+        <a href="/yacimiento/{{ yacimiento.id }}" class="btn btn-secondary" style="margin-top: 2rem;">← Volver al Yacimiento</a>
+    </div>
 </div>
-
-{% if invitaciones %}
-<div class="table-container">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Usuario</th>
-        <th>Email</th>
-        <th>Rol</th>
-        <th>Estado</th>
-        <th>Enviada</th>
-        <th>Mensaje</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for inv in invitaciones %}
-      <tr>
-        <td>
-          {% if inv.invitado %}
-          <strong>{{ inv.invitado.nombre_usuario }}</strong><br>
-          <small class="text-muted">{{ inv.invitado.nombre }} {{ inv.invitado.apellidos }}</small>
-          {% else %}
-          <span class="text-muted">—</span>
-          {% endif %}
-        </td>
-        <td>{{ inv.email }}</td>
-        <td><span class="badge badge-secondary">{{ inv.rol }}</span></td>
-        <td>
-          <span class="badge badge-{{ 'success' if inv.estado == 'aceptada' else 'warning' if inv.estado == 'pendiente' else 'error' }}">
-            {{ inv.estado }}
-          </span>
-        </td>
-        <td>
-          {{ inv.fecha_envio.strftime('%d/%m/%Y') if inv.fecha_envio else '—' }}
-          {% if inv.fecha_respuesta %}
-          <br><small class="text-muted">Resp: {{ inv.fecha_respuesta.strftime('%d/%m/%Y') }}</small>
-          {% endif %}
-        </td>
-        <td>{{ inv.mensaje | truncate(50) if inv.mensaje else '—' }}</td>
-        <td>
-          {% if inv.estado == 'pendiente' %}
-          <form action="{{ url_for('invitacion.revocar', invitacion_id=inv.id) }}" method="POST" style="display:inline"
-                onsubmit="return confirm('¿Revocar esta invitación?')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-sm btn-danger">Revocar</button>
-          </form>
-          {% elif inv.estado == 'aceptada' %}
-          <form action="{{ url_for('invitacion.revocar', invitacion_id=inv.id) }}" method="POST" style="display:inline"
-                onsubmit="return confirm('¿Eliminar acceso de {{ inv.invitado.nombre_usuario if inv.invitado else inv.email }}?')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-sm btn-outline">Retirar acceso</button>
-          </form>
-          {% else %}
-          <span class="text-muted small">Rechazada</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% else %}
-<div class="empty-state">
-  <p class="empty-icon">👥</p>
-  <h3>Sin invitaciones todavía</h3>
-  <p>Invita a colaboradores para trabajar juntos en este yacimiento.</p>
-  <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-primary">Invitar primer colaborador</a>
-</div>
-{% endif %}
-
 {% endblock %}

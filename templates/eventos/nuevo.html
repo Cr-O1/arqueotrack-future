@@ -1,96 +1,99 @@
 {% extends "base.html" %}
-{% block titulo %}Nuevo Evento — {{ yacimiento.nombre }}{% endblock %}
-{% block contenido %}
+{% block title %}Nuevo Evento - {{ yacimiento.nombre }}{% endblock %}
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
-  <a href="{{ url_for('evento.listar', yacimiento_id=yacimiento.id) }}">Eventos</a> ›
-  <span>Nuevo</span>
-</nav>
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Registrar Nuevo Evento</h1>
+        <p style="color: var(--primary-color); font-weight: 600;">{{ yacimiento.nombre }}</p>
 
-<div class="page-header">
-  <h1>📅 Registrar evento</h1>
-  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
-</div>
+        <form method="POST">
+            {{ formulario.hidden_tag() }}
 
-<div class="form-container">
-  <form method="POST" novalidate>
-    {{ formulario.hidden_tag() }}
+            <div class="form-group">
+                <label for="tipo">Tipo de Evento *</label>
+                {{ formulario.tipo(class="form-control", id="tipo") }}
+            </div>
 
-    <div class="form-card">
-      <h3>Tipo y título</h3>
-      <div class="form-row">
-        <div class="form-group">
-          {{ formulario.tipo.label(class="form-label required") }}
-          {{ formulario.tipo(class="form-control" + (" is-invalid" if formulario.tipo.errors else "")) }}
-          {% for e in formulario.tipo.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-        </div>
-        <div class="form-group">
-          {{ formulario.prioridad.label(class="form-label") }}
-          {{ formulario.prioridad(class="form-control") }}
-        </div>
-      </div>
-      <div class="form-group">
-        {{ formulario.titulo.label(class="form-label required") }}
-        {{ formulario.titulo(class="form-control" + (" is-invalid" if formulario.titulo.errors else ""), placeholder="Título descriptivo del evento") }}
-        {% for e in formulario.titulo.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
-    </div>
+            <div class="form-group">
+                <label for="titulo">Título del Evento *</label>
+                {{ formulario.titulo(class="form-control", id="titulo", autofocus=true) }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Un título descriptivo y conciso
+                </small>
+                {% if formulario.titulo.errors %}
+                    {% for error in formulario.titulo.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
 
-    <div class="form-card">
-      <h3>Descripción y fecha</h3>
-      <div class="form-group">
-        {{ formulario.descripcion.label(class="form-label required") }}
-        {{ formulario.descripcion(class="form-control" + (" is-invalid" if formulario.descripcion.errors else ""), rows=4, placeholder="Descripción detallada del evento…") }}
-        {% for e in formulario.descripcion.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          {{ formulario.fecha.label(class="form-label required") }}
-          {{ formulario.fecha(class="form-control" + (" is-invalid" if formulario.fecha.errors else ""), type="datetime-local") }}
-          {% for e in formulario.fecha.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-        </div>
-        <div class="form-group">
-          {{ formulario.estado_evento.label(class="form-label") }}
-          {{ formulario.estado_evento(class="form-control") }}
-        </div>
-      </div>
-    </div>
+            <div class="form-group">
+                <label for="descripcion">Descripción Detallada *</label>
+                {{ formulario.descripcion(class="form-control", id="descripcion", rows=4) }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Describe el evento con el mayor detalle posible
+                </small>
+                {% if formulario.descripcion.errors %}
+                    {% for error in formulario.descripcion.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
 
-    <div class="form-card">
-      <h3>Participantes y resultados</h3>
-      <div class="form-group">
-        {{ formulario.participantes.label(class="form-label") }}
-        {{ formulario.participantes(class="form-control", rows=2, placeholder="Nombres de las personas involucradas…") }}
-      </div>
-      <div class="form-group">
-        {{ formulario.resultados.label(class="form-label") }}
-        {{ formulario.resultados(class="form-control", rows=2, placeholder="Resultados o conclusiones del evento…") }}
-      </div>
-    </div>
 
-    <div class="form-card">
-      <h3>Vínculos (opcional)</h3>
-      <div class="form-row">
-        <div class="form-group">
-          {{ formulario.fase_id.label(class="form-label") }}
-          {{ formulario.fase_id(class="form-control") }}
-        </div>
-        <div class="form-group">
-          {{ formulario.hallazgo_id.label(class="form-label") }}
-          {{ formulario.hallazgo_id(class="form-control") }}
-        </div>
-        <div class="form-group">
-          {{ formulario.sector_id.label(class="form-label") }}
-          {{ formulario.sector_id(class="form-control") }}
-        </div>
-      </div>
-    </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="prioridad">Prioridad</label>
+                    {{ formulario.prioridad(class="form-control", id="prioridad") }}
+                </div>
+                <div class="form-group">
+                    <label for="estado_evento">Estado</label>
+                    {{ formulario.estado_evento(class="form-control", id="estado_evento") }}
+                </div>
+            </div>
 
-    <div class="form-actions">
-      <a href="{{ url_for('evento.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
-      <button type="submit" class="btn btn-primary">Registrar evento</button>
-    </div>
-  </form>
-</div>
-{% endblock %}
+            <div class="form-group">
+                <label for="participantes">Participantes</label>
+                {{ formulario.participantes(class="form-control", id="participantes", rows=3) }}
+            </div>
+
+            <div class="form-group">
+                <label for="resultados">Resultados</label>
+                {{ formulario.resultados(class="form-control", id="resultados", rows=3) }}
+            </div>
+            <div class="form-group">
+                <label for="fecha">Fecha y Hora del Evento *</label>
+                {{ formulario.fecha(class="form-control", id="fecha", type="datetime-local") }}
+                {% if formulario.fecha.errors %}
+                    {% for error in formulario.fecha.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div style="margin-top: 2rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--info-color);">
+                <h3 style="color: var(--info-color); margin-bottom: 1rem;">Relacionar con elementos del proyecto (opcional)</h3>
+
+                <div class="form-group">
+                    <label for="fase_id">Fase Relacionada</label>
+                    {{ formulario.fase_id(class="form-control", id="fase_id") }}
+                </div>
+
+                <div class="form-group">
+                    <label for="hallazgo_id">Hallazgo Relacionado</label>
+                    {{ formulario.hallazgo_id(class="form-control", id="hallazgo_id") }}
+                </div>
+
+                <div class="form-group">
+                    <label for="sector_id">Sector Relacionado</label>
+                    {{ formulario.sector_id(class="form-control", id="sector_id") }}
+                </div>
+            </div>
+
+            <div class="button-group" style="margin-top: 2rem;"><button type="submit" class="btn btn-success">Registrar Evento</button>
+                                <a href="/yacimiento/{{ yacimiento.id }}/timeline" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endblock %}

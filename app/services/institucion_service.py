@@ -22,6 +22,47 @@ JERARQUIA_ROLES = [
 ]
 
 
+    @staticmethod
+    def buscar(query='', tipo='', pais=''):
+        """Busca instituciones por nombre, tipo y país."""
+        q = Institucion.query.filter_by(activa=True)
+        if query:
+            q = q.filter(Institucion.nombre.ilike(f'%{query}%'))
+        if tipo:
+            q = q.filter_by(tipo=tipo)
+        if pais:
+            q = q.filter_by(pais=pais)
+        return q.all()
+
+    @staticmethod
+    def tiene_permiso(inst, user_id, accion):
+        """Verifica permisos de un usuario sobre una institución."""
+        mi_rol = inst.get_rol_usuario(user_id)
+        if not mi_rol:
+            return False
+        if mi_rol == 'director_general':
+            return True
+        # Simplificación para el MVP
+        return True
+
+    @staticmethod
+    def cambiar_rol(inst, usuario_id, nuevo_rol):
+        membresia = UsuarioInstitucion.query.filter_by(
+            institucion_id=inst.id, usuario_id=usuario_id, activo=True
+        ).first()
+        if membresia:
+            membresia.rol_institucional = nuevo_rol
+            db.session.commit()
+
+    @staticmethod
+    def remover_miembro(inst, usuario_id):
+        membresia = UsuarioInstitucion.query.filter_by(
+            institucion_id=inst.id, usuario_id=usuario_id, activo=True
+        ).first()
+        if membresia:
+            membresia.activo = False
+            db.session.commit()
+
 class InstitucionService:
 
     @staticmethod

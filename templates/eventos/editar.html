@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Editar Evento - ArqueoTrack{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Editar Evento</h1>
+        <p style="color: var(--gray);">{{ evento.yacimiento.nombre }}</p>
+
+        <form method="POST">
+            {{ formulario.hidden_tag() }}
+
+            <div class="form-group">
+                <label for="tipo">Tipo de Evento *</label>
+                {{ formulario.tipo(class="form-control", id="tipo") }}
+            </div>
+
+            <div class="form-group">
+                <label for="titulo">Título del Evento *</label>
+                {{ formulario.titulo(class="form-control", id="titulo") }}
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion">Descripción *</label>
+                {{ formulario.descripcion(class="form-control", id="descripcion", rows=4) }}
+            </div>
+
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="prioridad">Prioridad</label>
+                    {{ formulario.prioridad(class="form-control", id="prioridad") }}
+                </div>
+                <div class="form-group">
+                    <label for="estado_evento">Estado</label>
+                    {{ formulario.estado_evento(class="form-control", id="estado_evento") }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="participantes">Participantes</label>
+                {{ formulario.participantes(class="form-control", id="participantes", rows=3) }}
+            </div>
+
+            <div class="form-group">
+                <label for="resultados">Resultados</label>
+                {{ formulario.resultados(class="form-control", id="resultados", rows=3) }}
+            </div>
+            <div class="form-group">
+                <label for="fecha">Fecha y Hora *</label>
+                {{ formulario.fecha(class="form-control", id="fecha", type="datetime-local") }}
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                <h3 style="margin-bottom: 1rem;">Relaciones</h3>
+
+                <div class="form-group">
+                    <label for="fase_id">Fase</label>
+                    {{ formulario.fase_id(class="form-control", id="fase_id") }}
+                </div>
+
+                <div class="form-group">
+                    <label for="hallazgo_id">Hallazgo</label>
+                    {{ formulario.hallazgo_id(class="form-control", id="hallazgo_id") }}
+                </div>
+
+                <div class="form-group">
+                    <label for="sector_id">Sector</label>
+                    {{ formulario.sector_id(class="form-control", id="sector_id") }}
+                </div>
+            </div>
+
+            <div class="button-group" style="margin-top: 2rem;">
+                <button type="submit" class="btn">Guardar Cambios</button>
+                <a href="/yacimiento/{{ evento.yacimiento_id }}/timeline" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

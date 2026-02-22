@@ -1,132 +1,27 @@
 {% extends "base.html" %}
-{% block titulo %}{{ muestra.codigo }} · Muestras - ArqueoTrack{% endblock %}
+{% block title %}Detalle de Muestra - ArqueoTrack{% endblock %}
 
-{% block contenido %}
-<div class="page-header">
-  <div>
-    <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}" class="breadcrumb">← Muestras</a>
-    <h1>🧪 <code>{{ muestra.codigo }}</code> <span class="badge badge-tipo-{{ muestra.tipo }}">{{ muestra.tipo | capitalize }}</span></h1>
-  </div>
-  <div class="actions">
-    <a href="{{ url_for('muestra.editar', yacimiento_id=yacimiento.id, muestra_id=muestra.id) }}" class="btn btn-secondary">✏️ Editar</a>
-    {% if not muestra.fecha_envio_laboratorio %}
-    <form method="post" action="{{ url_for('muestra.enviar_laboratorio', yacimiento_id=yacimiento.id, muestra_id=muestra.id) }}" style="display:inline">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="laboratorio" value="{{ muestra.laboratorio }}">
-      <button type="submit" class="btn btn-primary">📤 Enviar a laboratorio</button>
-    </form>
-    {% endif %}
-  </div>
-</div>
-
-<div class="layout-2col">
-  <!-- Datos de la muestra -->
-  <div>
+{% block content %}
+<div class="main-content">
     <div class="card">
-      <h3>📋 Datos de la muestra</h3>
-      <dl class="data-list">
-        <dt>Tipo</dt><dd>{{ muestra.tipo | capitalize }}</dd>
-        {% if muestra.descripcion %}<dt>Descripción</dt><dd>{{ muestra.descripcion }}</dd>{% endif %}
-        {% if muestra.ue %}<dt>UE</dt><dd><a href="{{ url_for('ue.detalle', yacimiento_id=yacimiento.id, ue_id=muestra.ue.id) }}">UE {{ muestra.ue.numero_ue }}</a></dd>{% endif %}
-        {% if muestra.campana %}<dt>Campaña</dt><dd>{{ muestra.campana.nombre }} ({{ muestra.campana.anio }})</dd>{% endif %}
-        {% if muestra.peso_gramos %}<dt>Peso</dt><dd>{{ muestra.peso_gramos }} g</dd>{% endif %}
-        {% if muestra.registrada_por %}<dt>Recogida por</dt><dd>{{ muestra.registrada_por.nombre_completo }}</dd>{% endif %}
-        <dt>Fecha de recogida</dt><dd>{{ muestra.fecha_recogida.strftime('%d/%m/%Y %H:%M') if muestra.fecha_recogida else '—' }}</dd>
-      </dl>
+        <h1>Muestra: {{ muestra.codigo }}</h1>
+        <p><strong>Estado:</strong> {{ muestra.estado | replace('_', ' ') | capitalize }}</p>
+        <p><strong>Tipo:</strong> {{ muestra.tipo | capitalize }}</p>
+        <p><strong>Descripción:</strong> {{ muestra.descripcion }}</p>
     </div>
 
-    {% if muestra.latitud and muestra.longitud %}
-    <div class="card mt-2">
-      <h3>📍 Coordenadas</h3>
-      <dl class="data-list">
-        <dt>Latitud</dt><dd>{{ '%.6f'|format(muestra.latitud) }}°</dd>
-        <dt>Longitud</dt><dd>{{ '%.6f'|format(muestra.longitud) }}°</dd>
-        {% if muestra.altitud %}<dt>Altitud</dt><dd>{{ '%.3f'|format(muestra.altitud) }} m</dd>{% endif %}
-      </dl>
+    {% if muestra.estado == 'recogida' %}
+    <div class="card" style="margin-top: 2rem;">
+        <h2>Enviar a Laboratorio</h2>
+        <form action="{{ url_for('muestra.enviar_laboratorio', yacimiento_id=yacimiento.id, muestra_id=muestra.id) }}" method="POST">
+            {{ form_lab.hidden_tag() }}
+            <div class="form-group">
+                <label>Laboratorio</label>
+                {{ form_lab.laboratorio(class="form-control") }}
+            </div>
+            <button type="submit" class="btn">Registrar Envío</button>
+        </form>
     </div>
     {% endif %}
-  </div>
-
-  <!-- Estado del análisis -->
-  <div>
-    <div class="card">
-      <h3>🔬 Estado del análisis</h3>
-
-      <div class="pipeline-estados">
-        <div class="estado-paso {% if true %}activo{% endif %}">
-          ✅ Recogida
-          <small>{{ muestra.fecha_recogida.strftime('%d/%m/%Y') if muestra.fecha_recogida else '' }}</small>
-        </div>
-        <div class="estado-paso {% if muestra.fecha_envio_laboratorio %}activo{% endif %}">
-          {% if muestra.fecha_envio_laboratorio %}✅{% else %}⏳{% endif %} Enviada al lab
-          {% if muestra.fecha_envio_laboratorio %}
-          <small>{{ muestra.fecha_envio_laboratorio.strftime('%d/%m/%Y') }}</small>
-          {% endif %}
-        </div>
-        <div class="estado-paso {% if muestra.fecha_resultado %}activo{% endif %}">
-          {% if muestra.fecha_resultado %}✅{% else %}⏳{% endif %} Con resultados
-          {% if muestra.fecha_resultado %}
-          <small>{{ muestra.fecha_resultado.strftime('%d/%m/%Y') }}</small>
-          {% endif %}
-        </div>
-      </div>
-
-      {% if muestra.laboratorio %}
-      <p class="mt-2">🏭 Laboratorio: <strong>{{ muestra.laboratorio }}</strong></p>
-      {% endif %}
-      {% if muestra.referencia_laboratorio %}
-      <p>📄 Ref: <code>{{ muestra.referencia_laboratorio }}</code></p>
-      {% endif %}
-      {% if muestra.notas_laboratorio %}
-      <p class="text-muted">{{ muestra.notas_laboratorio }}</p>
-      {% endif %}
-    </div>
-
-    <!-- Resultados -->
-    {% set resultados = muestra.resultados.all() if muestra.resultados else [] %}
-    <div class="card mt-2">
-      <h3>📊 Resultados</h3>
-      {% if resultados %}
-      {% for res in resultados %}
-      <div class="resultado-card">
-        <div class="resultado-header">
-          <strong>{{ res.tipo_analisis | capitalize }}</strong>
-          <small>{{ res.fecha.strftime('%d/%m/%Y') }}</small>
-        </div>
-        {% if res.valor %}<p><strong>Valor:</strong> {{ res.valor }} {{ res.unidades or '' }}</p>{% endif %}
-        {% if res.interpretacion %}<p>{{ res.interpretacion }}</p>{% endif %}
-        {% if res.error_estadistico %}<p class="text-muted">± {{ res.error_estadistico }}</p>{% endif %}
-      </div>
-      {% endfor %}
-
-      <!-- Registrar resultado -->
-      <form method="post" action="{{ url_for('muestra.añadir_resultado', yacimiento_id=yacimiento.id, muestra_id=muestra.id) }}" class="mt-3">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h4>+ Añadir resultado</h4>
-        <div class="form-row">
-          <input type="text" name="tipo_analisis" class="form-control" placeholder="Tipo de análisis" required>
-          <input type="text" name="valor" class="form-control" placeholder="Valor">
-          <input type="text" name="unidades" class="form-control" placeholder="Unidades (BP, cal. BP…)">
-        </div>
-        <textarea name="interpretacion" class="form-control mt-1" placeholder="Interpretación…" rows="2"></textarea>
-        <button type="submit" class="btn btn-sm btn-primary mt-1">Guardar resultado</button>
-      </form>
-      {% else %}
-      <p class="text-muted">Aún no hay resultados de análisis.</p>
-      {% if muestra.fecha_envio_laboratorio %}
-      <p class="text-muted">La muestra está en el laboratorio. Los resultados se registrarán cuando lleguen.</p>
-      {% endif %}
-      {% endif %}
-    </div>
-
-    <!-- Eliminar -->
-    <div class="card card-danger mt-2">
-      <h3>⚠️ Zona peligrosa</h3>
-      <form method="post" action="{{ url_for('muestra.eliminar', yacimiento_id=yacimiento.id, muestra_id=muestra.id) }}" onsubmit="return confirm('¿Eliminar la muestra {{ muestra.codigo }}?')">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-danger">🗑️ Eliminar muestra</button>
-      </form>
-    </div>
-  </div>
 </div>
 {% endblock %}

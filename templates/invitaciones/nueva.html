@@ -1,58 +1,76 @@
 {% extends "base.html" %}
-{% block titulo %}Invitar Colaborador — {{ yacimiento.nombre }}{% endblock %}
-{% block contenido %}
+{% block title %}Enviar Invitación - {{ yacimiento.nombre }}{% endblock %}
 
-<nav class="breadcrumb">
-  <a href="{{ url_for('yacimiento.detalle', yacimiento_id=yacimiento.id) }}">{{ yacimiento.nombre }}</a> ›
-  <a href="{{ url_for('invitacion.gestionar', yacimiento_id=yacimiento.id) }}">Invitaciones</a> ›
-  <span>Nueva</span>
-</nav>
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>Enviar Invitación</h1>
+        <p style="color: var(--primary-color); font-weight: 600;">{{ yacimiento.nombre }}</p>
+        <p style="color: var(--gray); margin-bottom: 2rem;">
+            Invita a un miembro de tu equipo para colaborar en este yacimiento
+        </p>
 
-<div class="page-header">
-  <h1>👥 Invitar colaborador</h1>
-  <p class="text-muted">Yacimiento: <strong>{{ yacimiento.nombre }}</strong></p>
-</div>
+        <form method="POST">
+            {{ formulario.hidden_tag() }}
 
-<div class="form-container">
-  <div class="form-card info-banner">
-    <h4>ℹ️ Sobre los roles</h4>
-    <dl class="roles-info">
-      <dt>Visualizador</dt><dd>Solo puede ver hallazgos y datos del yacimiento.</dd>
-      <dt>Editor</dt><dd>Puede editar hallazgos y sectores existentes.</dd>
-      <dt>Colaborador</dt><dd>Puede crear y editar hallazgos, sectores y fases.</dd>
-      <dt>Asistente</dt><dd>Acceso completo excepto gestión de invitaciones.</dd>
-    </dl>
-  </div>
+            <div class="form-group">
+                <label for="email">Correo Electrónico del Invitado *</label>
+                {{ formulario.email(class="form-control", id="email", type="email", autofocus=true) }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    El usuario debe tener una cuenta registrada en ArqueoTrack
+                </small>
+                {% if formulario.email.errors %}
+                    {% for error in formulario.email.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
 
-  <form method="POST" novalidate>
-    {{ formulario.hidden_tag() }}
+            <div class="form-group">
+                <label for="rol">Rol en el Proyecto *</label>
+                {{ formulario.rol(class="form-control", id="rol") }}
+                {% if formulario.rol.errors %}
+                    {% for error in formulario.rol.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
 
-    <div class="form-card">
-      <div class="form-group">
-        {{ formulario.email.label(class="form-label required") }}
-        {{ formulario.email(class="form-control" + (" is-invalid" if formulario.email.errors else ""),
-            placeholder="correo@ejemplo.com", type="email",
-            autocomplete="off") }}
-        {% for e in formulario.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-        <div class="form-hint">El usuario debe tener una cuenta en ArqueoTrack.</div>
-      </div>
+            <div class="form-group">
+                <label for="mensaje">Mensaje Personalizado (Opcional)</label>
+                {{ formulario.mensaje(class="form-control", id="mensaje", rows=4) }}
+                <small style="color: var(--gray); font-size: var(--font-sm);">
+                    Escribe un mensaje para el invitado explicando el proyecto o sus responsabilidades
+                </small>
+            </div>
 
-      <div class="form-group">
-        {{ formulario.rol.label(class="form-label required") }}
-        {{ formulario.rol(class="form-control" + (" is-invalid" if formulario.rol.errors else "")) }}
-        {% for e in formulario.rol.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
-      </div>
+            <div style="margin-top: 2rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--info-color);">
+                <h3 style="color: var(--info-color); margin-bottom: 1rem;">Descripción de Roles</h3>
+                <div style="display: grid; gap: 1rem; color: var(--dark-secondary); line-height: 1.6;">
+                    <div>
+                        <strong style="color: var(--primary-color);">Visualizador:</strong>
+                        Acceso de solo lectura. Puede ver yacimientos, hallazgos, fases y comentarios, pero no puede realizar cambios.
+                    </div>
+                    <div>
+                        <strong style="color: var(--primary-color);">Editor:</strong>
+                        Puede modificar información existente de yacimientos y hallazgos, pero no puede crear nuevos elementos ni eliminar.
+                    </div>
+                    <div>
+                        <strong style="color: var(--primary-color);">Colaborador:</strong>
+                        Puede crear hallazgos, fases, sectores y eventos. Puede editar y comentar. No puede eliminar elementos importantes.
+                    </div>
+                    <div>
+                        <strong style="color: var(--primary-color);">Asistente:</strong>
+                        Acceso casi completo. Puede realizar todas las acciones excepto eliminar el yacimiento completo. Ideal para codirectores del proyecto.
+                    </div>
+                </div>
+            </div>
 
-      <div class="form-group">
-        {{ formulario.mensaje.label(class="form-label") }}
-        {{ formulario.mensaje(class="form-control", rows=3, placeholder="Mensaje opcional para el invitado…") }}
-      </div>
+            <div class="button-group" style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-success">Enviar Invitación</button>
+                <a href="/yacimiento/{{ yacimiento.id }}/invitaciones" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
     </div>
-
-    <div class="form-actions">
-      <a href="{{ url_for('invitacion.gestionar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
-      <button type="submit" class="btn btn-primary">Enviar invitación</button>
-    </div>
-  </form>
 </div>
 {% endblock %}

@@ -1,207 +1,208 @@
 {% extends "base.html" %}
-{% block titulo %}{{ yacimiento.nombre }} — ArqueoTrack{% endblock %}
-{% block contenido %}
 
-<!-- Breadcrumb -->
-<nav class="breadcrumb">
-  <a href="{{ url_for('main.inicio') }}">Inicio</a> ›
-  <span>{{ yacimiento.nombre }}</span>
-</nav>
+{% block title %}{{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
 
-<!-- Cabecera -->
-<div class="page-header">
-  <div>
-    <h1>🗺️ {{ yacimiento.nombre }}</h1>
-    {% if yacimiento.ubicacion %}
-    <p class="text-muted">📍 {{ yacimiento.ubicacion }}</p>
-    {% endif %}
-    <span class="badge badge-secondary">{{ rol_usuario | capitalize }}</span>
-  </div>
-  <div class="header-actions">
-    {% if puede_editar %}
-    <a href="{{ url_for('yacimiento.editar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">✏️ Editar</a>
-    {% endif %}
-    {% if es_propietario %}
-    <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">👥 Invitar</a>
-    {% endif %}
-  </div>
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="margin-bottom: 0.5rem;">{{ yacimiento.nombre }}</h1>
+                <p style="color: var(--gray); margin: 0;">
+                    {% if yacimiento.fecha_fin %}
+                        <span class="badge badge-success">Excavación Finalizada</span>
+                    {% else %}
+                        <span class="badge badge-info">Excavación en Progreso</span>
+                    {% endif %}
+                    {% if yacimiento.polygon_geojson %}
+                        <span class="badge badge-primary" style="margin-left: 0.5rem;">📐 Perímetro Definido</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="button-group" style="margin: 0;">
+                {% if puede_editar %}
+                    <a href="/editar_yacimiento/{{ yacimiento.id }}" class="btn">Editar</a>
+                {% endif %}
+                {% if puede_crear %}
+                    <a href="/nuevo_hallazgo/{{ yacimiento.id }}" class="btn btn-success">Registrar Hallazgo</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if yacimiento.descripcion %}
+            <div style="margin: 1.5rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius); border-left: 4px solid var(--primary-color);">
+                <h3>Descripción</h3>
+                <p style="color: var(--dark-secondary); line-height: 1.7; margin: 0.5rem 0 0 0;">
+                    {{ yacimiento.descripcion }}
+                </p>
+            </div>
+        {% endif %}
+
+        <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius-lg);">
+            <div class="detail-item">
+                <strong>Ubicación</strong><br>
+                <span style="color: var(--dark-secondary);">{{ yacimiento.ubicacion or 'No especificada' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Responsable</strong><br>
+                <span style="color: var(--dark-secondary);">{{ yacimiento.responsable or 'No asignado' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Fecha de Inicio</strong><br>
+                <span style="color: var(--dark-secondary);">{{ yacimiento.fecha_inicio or 'No especificada' }}</span>
+            </div>
+
+            <div class="detail-item">
+                <strong>Fecha de Fin</strong><br>
+                <span style="color: var(--dark-secondary);">{{ yacimiento.fecha_fin or 'En progreso' }}</span>
+            </div>
+
+            {% if yacimiento.altitud_media %}
+                <div class="detail-item">
+                    <strong>Altitud Media</strong><br>
+                    <span style="color: var(--dark-secondary);">{{ yacimiento.altitud_media }} metros</span>
+                </div>
+            {% endif %}
+
+            {% if yacimiento.area_m2 %}
+                <div class="detail-item">
+                    <strong>Área del Yacimiento</strong><br>
+                    <span style="color: var(--dark-secondary);">
+                        {% if yacimiento.area_m2 >= 10000 %}
+                            {{ "%.2f"|format(yacimiento.area_m2 / 10000) }} ha ({{ "%.0f"|format(yacimiento.area_m2) }} m²)
+                        {% else %}
+                            {{ "%.2f"|format(yacimiento.area_m2) }} m²
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+
+            {% if yacimiento.lat and yacimiento.lng %}
+                <div class="detail-item" style="grid-column: span 2;">
+                    <strong>Coordenadas GPS</strong><br>
+                    <span style="color: var(--dark-secondary); font-family: monospace;">{{ yacimiento.lat }}, {{ yacimiento.lng }}</span>
+                    {% if yacimiento.polygon_geojson %}
+                        <span style="margin-left: 1rem; padding: 0.25rem 0.5rem; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 0.875rem;">Perímetro definido</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="stats-grid" style="margin: 2rem 0;">
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));">
+                <h3>{{ total_hallazgos }}</h3>
+                <p>Hallazgos</p>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--secondary-color), #7c3aed);">
+                <h3>{{ hallazgos_con_foto }}</h3>
+                <p>Con Fotografía</p>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--success-color), #059669);">
+                <h3>{{ total_sectores }}</h3>
+                <p>Sectores</p>
+            </div>
+
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #2563eb);">
+                <h3>{{ total_fases }}</h3>
+                <p>Fases</p>
+            </div>
+        </div>
+
+        <div class="button-group" style="margin-top: 1.5rem;">
+            <a href="{{ url_for('fase.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-info">Ver Fases</a>
+            <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-info">Ver Sectores</a>
+            <a href="{{ url_for('evento.timeline', yacimiento_id=yacimiento.id) }}" class="btn btn-info">Línea de Tiempo</a>
+            {% if es_propietario or rol_usuario == 'asistente' %}
+                <a href="{{ url_for('invitacion.gestionar', yacimiento_id=yacimiento.id) }}" class="btn btn-warning">Invitaciones</a>
+            {% endif %}
+            <a href="{{ url_for('yacimiento.proceso', yacimiento_id=yacimiento.id) }}" class="btn btn-secondary">Ver Proceso</a>
+            {% if yacimiento.fecha_fin %}
+                <a href="/yacimiento/{{ yacimiento.id }}/informe" class="btn btn-success" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                    </svg>
+                    Descargar Informe PDF
+                </a>
+            {% endif %}
+            <a href="/inicio" class="btn btn-secondary">← Volver</a>
+            {% if es_propietario %}
+                <form method="POST" action="/eliminar_yacimiento/{{ yacimiento.id }}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de eliminar este yacimiento?\n\nSe eliminarán:\n- Todos los hallazgos\n- Todas las fases\n- Todos los sectores\n\nEsta acción NO se puede deshacer.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">🗑 Eliminar</button>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if not es_propietario %}
+            <div style="margin-top: 1rem; padding: 0.75rem 1rem; background: var(--info-color); color: white; border-radius: var(--border-radius); font-size: var(--font-sm);">
+                Estás colaborando en este proyecto como <strong>{{ rol_usuario|upper }}</strong>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; border: none;">Hallazgos ({{ total_hallazgos }})</h2>
+            {% if puede_crear %}
+                <a href="/nuevo_hallazgo/{{ yacimiento.id }}" class="btn btn-success" style="margin: 0;">
+                    ➕ Registrar Hallazgo
+                </a>
+            {% endif %}
+        </div>
+
+        {% if hallazgos %}
+            <div class="hallazgos-list">
+                {% for hallazgo in hallazgos %}
+                    <div class="hallazgo-card">
+                        {% if hallazgo.foto %}
+                            <div style="margin-bottom: 1rem;">
+                                <img src="/uploads/{{ hallazgo.foto }}"
+                                     alt="Fotografía de {{ hallazgo.tipo or 'hallazgo' }}"
+                                     style="width: 100%; height: 200px; object-fit: cover; border-radius: var(--border-radius);">
+                            </div>
+                        {% endif %}
+
+                        <h3>{{ hallazgo.tipo or 'Hallazgo sin tipo' }}</h3>
+                        <p style="margin: 0.5rem 0;">
+                            <strong>Código:</strong>
+                            <span class="access-code" style="display: inline-block; padding: 0.25rem 0.75rem; margin-left: 0.5rem; font-size: 0.9rem; cursor: pointer;" title="Clic para copiar">
+                                {{ hallazgo.codigo_acceso }}
+                            </span>
+                        </p>
+                        <p style="margin: 0.5rem 0;"><strong>Fecha:</strong> {{ hallazgo.fecha or 'No especificada' }}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Estado:</strong> {{ hallazgo.estado_conservacion or 'No especificado' }}</p>
+                        {% if hallazgo.sector %}
+                            <p style="margin: 0.5rem 0;"><strong>Sector:</strong> {{ hallazgo.sector.nombre }}</p>
+                        {% endif %}
+
+                        {% if hallazgo.descripcion %}
+                            <p style="margin-top: 1rem; color: var(--gray);">
+                                {{ hallazgo.descripcion[:120] }}{% if hallazgo.descripcion|length > 120 %}...{% endif %}
+                            </p>
+                        {% endif %}
+
+                        <a href="/hallazgo/{{ hallazgo.id }}" class="btn" style="margin-top: 1rem; width: 100%;">
+                            Ver Detalles Completos →
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 3rem 1rem; background: var(--light-gray); border-radius: var(--border-radius-lg);">
+                <h3 style="color: var(--dark); margin-bottom: 1rem;">No hay hallazgos registrados</h3>
+                <p style="color: var(--gray); margin-bottom: 2rem;">Comienza documentando el primer hallazgo de este yacimiento</p>
+                {% if puede_crear %}
+                    <a href="/nuevo_hallazgo/{{ yacimiento.id }}" class="btn btn-success" style="font-size: 1.1rem; padding: 0.875rem 2rem;">
+                        ➕ Registrar Primer Hallazgo
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 </div>
-
-<!-- Estadísticas rápidas -->
-<div class="stats-grid">
-  <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}" class="stat-card stat-link">
-    <span class="stat-number">{{ total_sectores }}</span>
-    <span class="stat-label">📐 Sectores</span>
-  </a>
-  <a href="{{ url_for('fase.listar', yacimiento_id=yacimiento.id) }}" class="stat-card stat-link">
-    <span class="stat-number">{{ total_fases }}</span>
-    <span class="stat-label">📋 Fases</span>
-  </a>
-  <div class="stat-card">
-    <span class="stat-number">{{ total_hallazgos }}</span>
-    <span class="stat-label">🏺 Hallazgos</span>
-  </div>
-  <div class="stat-card">
-    <span class="stat-number">{{ hallazgos_con_foto }}</span>
-    <span class="stat-label">📷 Con foto</span>
-  </div>
-</div>
-
-<div class="detalle-layout">
-
-  <!-- Columna principal -->
-  <div class="detalle-main">
-
-    <!-- Descripción -->
-    {% if yacimiento.descripcion %}
-    <div class="info-card">
-      <h3>Descripción</h3>
-      <p>{{ yacimiento.descripcion }}</p>
-    </div>
-    {% endif %}
-
-    <!-- Datos del yacimiento -->
-    <div class="info-card">
-      <h3>Datos del yacimiento</h3>
-      <dl class="data-list">
-        {% if yacimiento.responsable %}
-        <dt>Director/a</dt><dd>{{ yacimiento.responsable }}</dd>
-        {% endif %}
-        {% if yacimiento.fecha_inicio %}
-        <dt>Inicio excavación</dt><dd>{{ yacimiento.fecha_inicio.strftime('%d/%m/%Y') }}</dd>
-        {% endif %}
-        {% if yacimiento.fecha_fin %}
-        <dt>Fin excavación</dt><dd>{{ yacimiento.fecha_fin.strftime('%d/%m/%Y') }}</dd>
-        {% endif %}
-        {% if yacimiento.area_m2 %}
-        <dt>Área</dt><dd>{{ yacimiento.area_m2 | int }} m²</dd>
-        {% endif %}
-        {% if yacimiento.altitud_media %}
-        <dt>Altitud media</dt><dd>{{ yacimiento.altitud_media }} m</dd>
-        {% endif %}
-        {% if yacimiento.lat and yacimiento.lng %}
-        <dt>Coordenadas</dt><dd>{{ "%.6f" | format(yacimiento.lat) }}, {{ "%.6f" | format(yacimiento.lng) }}</dd>
-        {% endif %}
-      </dl>
-    </div>
-
-    <!-- Hallazgos recientes -->
-    <div class="info-card">
-      <div class="card-header-row">
-        <h3>Hallazgos recientes</h3>
-        {% if puede_crear %}
-        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-sm btn-primary">+ Añadir hallazgo</a>
-        {% endif %}
-      </div>
-      {% if hallazgos %}
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Tipo</th>
-            <th>Material</th>
-            <th>Datación</th>
-            <th>Sector</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for h in hallazgos[:10] %}
-          <tr>
-            <td><code>{{ h.codigo_acceso }}</code></td>
-            <td>{{ h.tipo or '—' }}</td>
-            <td>{{ h.material or '—' }}</td>
-            <td>{{ h.datacion or '—' }}</td>
-            <td>{{ h.sector.nombre if h.sector else '—' }}</td>
-            <td><a href="{{ url_for('hallazgo.detalle', hallazgo_id=h.id) }}" class="btn btn-xs btn-outline">Ver</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% if hallazgos | length > 10 %}
-      <p class="text-muted small">Mostrando 10 de {{ hallazgos | length }} hallazgos.</p>
-      {% endif %}
-      {% else %}
-      <p class="text-muted">Sin hallazgos registrados.
-        {% if puede_crear %}<a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yacimiento.id) }}">Registrar el primero</a>.{% endif %}
-      </p>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Barra lateral -->
-  <div class="detalle-aside">
-
-    <!-- Acciones -->
-    <div class="aside-card">
-      <h4>Acciones</h4>
-      <div class="action-list">
-        {% if puede_crear %}
-        <a href="{{ url_for('hallazgo.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-primary btn-block">🏺 Nuevo hallazgo</a>
-        <a href="{{ url_for('sector.nuevo_sector', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📐 Nuevo sector</a>
-        <a href="{{ url_for('fase.nueva', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📋 Nueva fase</a>
-        <a href="{{ url_for('evento.nuevo', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📅 Nuevo evento</a>
-        {% endif %}
-        <a href="{{ url_for('ue.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">🧱 Unidades Estratigráficas</a>
-        <a href="{{ url_for('ue.harris', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📊 Matriz de Harris</a>
-        <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">🧪 Muestras</a>
-        <a href="{{ url_for('campana.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">⛺ Campañas</a>
-        <a href="{{ url_for('evento.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">📅 Eventos</a>
-      </div>
-    </div>
-
-    <!-- Sectores -->
-    {% if sectores %}
-    <div class="aside-card">
-      <div class="card-header-row">
-        <h4>Sectores</h4>
-        <a href="{{ url_for('sector.listar', yacimiento_id=yacimiento.id) }}" class="link-sm">Ver todos</a>
-      </div>
-      <ul class="tag-list">
-        {% for s in sectores %}
-        <li><a href="{{ url_for('sector.detalle', sector_id=s.id) }}" class="tag" style="border-left: 3px solid {{ s.color or '#6366F1' }}">{{ s.nombre }}</a></li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-
-    <!-- Fases -->
-    {% if fases %}
-    <div class="aside-card">
-      <div class="card-header-row">
-        <h4>Fases</h4>
-        <a href="{{ url_for('fase.listar', yacimiento_id=yacimiento.id) }}" class="link-sm">Ver todas</a>
-      </div>
-      <ul class="fase-list">
-        {% for f in fases %}
-        <li class="fase-item">
-          <span class="fase-estado fase-{{ f.estado }}">{{ f.estado }}</span>
-          <span>{{ f.nombre }}</span>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-
-    <!-- Invitaciones (solo propietario) -->
-    {% if es_propietario %}
-    <div class="aside-card">
-      <h4>Equipo</h4>
-      <a href="{{ url_for('invitacion.gestionar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">👥 Gestionar invitaciones</a>
-      <a href="{{ url_for('invitacion.invitar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline btn-block">+ Invitar colaborador</a>
-    </div>
-
-    <div class="aside-card danger-zone">
-      <h4 class="text-danger">Zona de peligro</h4>
-      <form action="{{ url_for('yacimiento.eliminar', yacimiento_id=yacimiento.id) }}" method="POST"
-            onsubmit="return confirm('¿Eliminar el yacimiento «{{ yacimiento.nombre }}» y todos sus datos?')">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-danger btn-block">🗑️ Eliminar yacimiento</button>
-      </form>
-    </div>
-    {% endif %}
-
-  </div>
-</div>
-
 {% endblock %}

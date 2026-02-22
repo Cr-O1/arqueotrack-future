@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Timeline - {{ yacimiento.nombre }}{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <h1>Línea de Tiempo</h1>
+            <a href="/yacimiento/{{ yacimiento.id }}/evento/nuevo" class="btn btn-success">Nuevo Evento</a>
+        </div>
+
+        <h2 style="color: var(--primary-color); border: none;">{{ yacimiento.nombre }}</h2>
+        <div class="stats-grid" style="margin: 2rem 0;">
+            <div class="stat-card">
+                <h3>{{ total_eventos }}</h3>
+                <p>Total de Eventos</p>
+            </div>
+
+            {% for tipo, count in eventos_por_tipo.items() %}
+            <div class="stat-card" style="background: linear-gradient(135deg, var(--secondary-color), #7c3aed);">
+                <h3>{{ count }}</h3>
+                <p>{{ tipo|title }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="margin: 2rem 0; padding: 1.5rem; background: var(--light-gray); border-radius: var(--border-radius);">
+            <strong>Filtrar por tipo:</strong>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
+                <a href="?tipo=" class="btn {% if not tipo_filtro %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.5rem 1rem;">
+                    Todos
+                </a>
+                <a href="?tipo=hallazgo" class="btn {% if tipo_filtro == 'hallazgo' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.5rem 1rem;">
+                    Hallazgos
+                </a>
+                <a href="?tipo=reunion" class="btn {% if tipo_filtro == 'reunion' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.5rem 1rem;">
+                    Reuniones
+                </a>
+                <a href="?tipo=analisis" class="btn {% if tipo_filtro == 'analisis' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.5rem 1rem;">
+                    Análisis
+                </a>
+                <a href="?tipo=cambio_estado" class="btn {% if tipo_filtro == 'cambio_estado' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.5rem 1rem;">
+                    Cambios
+                </a>
+                <a href="?tipo=decision" class="btn {% if tipo_filtro == 'decision' %}btn-primary{% else %}btn-secondary{% endif %}" style="padding: 0.5rem 1rem;">
+                    Decisiones
+                </a>
+            </div>
+        </div>
+
+        {% if eventos %}
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+
+                {% for evento in eventos %}
+                <div class="timeline-event">
+                    <div class="timeline-dot" style="background: {% if evento.tipo == 'hallazgo' %}var(--warning-color){% elif evento.tipo == 'reunion' %}var(--info-color){% elif evento.tipo == 'analisis' %}var(--success-color){% elif evento.tipo == 'cambio_estado' %}var(--primary-color){% else %}var(--secondary-color){% endif %};"></div>
+
+                    <div class="timeline-header">
+                        <h3 class="timeline-title">
+                            {{ evento.titulo }}
+                        </h3>
+                        <span class="timeline-date">{{ evento.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+                    </div>
+
+                    <div class="timeline-description">
+                        <p>{{ evento.descripcion }}</p>
+                    </div>
+
+                    <div class="timeline-meta">
+                        <span>Tipo: {% if evento.tipo == 'hallazgo' %}Hallazgo{% elif evento.tipo == 'reunion' %}Reunión{% elif evento.tipo == 'analisis' %}Análisis{% elif evento.tipo == 'cambio_estado' %}Cambio de Estado{% elif evento.tipo == 'decision' %}Decisión{% elif evento.tipo == 'visita' %}Visita{% elif evento.tipo == 'entrega' %}Entrega{% else %}Otro{% endif %}</span>
+                        <span>Prioridad: {{ evento.prioridad|replace('_', ' ')|title }}</span>
+                        <span>Estado: {{ evento.estado_evento|replace('_', ' ')|title }}</span>
+                        {% if evento.usuario %}
+                        <span>Usuario: {{ evento.usuario.nombre_usuario }}</span>
+                        {% endif %}
+                        {% if evento.fase %}
+                        <span>Fase: <a href="/fase/{{ evento.fase.id }}" style="color: var(--primary-color); text-decoration: none;">{{ evento.fase.nombre }}</a></span>
+                        {% endif %}
+                        {% if evento.hallazgo %}
+                        <span>Hallazgo: <a href="/hallazgo/{{ evento.hallazgo.id }}" style="color: var(--primary-color); text-decoration: none;">{{ evento.hallazgo.codigo_acceso }}</a></span>
+                        {% endif %}
+                        {% if evento.sector %}
+                        <span>Sector: <a href="/sector/{{ evento.sector.id }}" style="color: var(--primary-color); text-decoration: none;">{{ evento.sector.nombre }}</a></span>
+                        {% endif %}
+                    </div>
+
+                    {% if evento.participantes or evento.resultados %}
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                        {% if evento.participantes %}<div><strong>Participantes:</strong> {{ evento.participantes }}</div>{% endif %}
+                        {% if evento.resultados %}<div style="margin-top: 0.5rem;"><strong>Resultados:</strong> {{ evento.resultados }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <a href="/editar_evento/{{ evento.id }}" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: var(--font-sm);">Editar</a>
+                        <form method="POST" action="/eliminar_evento/{{ evento.id }}" style="display: inline;" onsubmit="return confirm('¿Eliminar este evento?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: var(--font-sm);">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 3rem; background: var(--light-gray); border-radius: var(--border-radius);">
+                <p style="color: var(--gray); font-size: 1.1rem;">No hay eventos registrados todavía</p>
+                <a href="/yacimiento/{{ yacimiento.id }}/evento/nuevo" class="btn" style="margin-top: 1rem;">Crear Primer Evento</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

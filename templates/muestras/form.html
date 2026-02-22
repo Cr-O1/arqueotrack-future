@@ -1,102 +1,29 @@
 {% extends "base.html" %}
-{% block titulo %}{{ title }} · {{ yacimiento.nombre }} - ArqueoTrack{% endblock %}
+{% block title %}{{ title }} - ArqueoTrack{% endblock %}
 
-{% block contenido %}
-<div class="page-header">
-  <div>
-    <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}" class="breadcrumb">← Muestras</a>
-    <h1>🧪 {{ title }}</h1>
-  </div>
-</div>
-
-<div class="card form-card">
-  <form method="post" novalidate>
-    {{ form.hidden_tag() }}
-
-    <div class="form-row">
-      <div class="form-group">
-        {{ form.tipo.label }}
-        {{ form.tipo(class="form-control") }}
-        {% for err in form.tipo.errors %}<span class="error">{{ err }}</span>{% endfor %}
-      </div>
-      <div class="form-group">
-        {{ form.codigo.label }}
-        <span class="text-muted">(se genera automáticamente si lo dejas vacío)</span>
-        {{ form.codigo(class="form-control", placeholder="MUE-2025-001…") }}
-      </div>
+{% block content %}
+<div class="main-content">
+    <div class="form-container">
+        <h1>{{ title }}</h1>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                <label>{{ form.tipo.label }}</label>
+                {{ form.tipo(class="form-control") }}
+            </div>
+            <div class="form-group">
+                <label>{{ form.descripcion.label }}</label>
+                {{ form.descripcion(class="form-control") }}
+            </div>
+            <div class="form-group">
+                <label>{{ form.ue_id.label }}</label>
+                {{ form.ue_id(class="form-control") }}
+            </div>
+            <div class="button-group">
+                <button type="submit" class="btn">Registrar Muestra</button>
+                <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
     </div>
-
-    <div class="form-group">
-      {{ form.descripcion.label }}
-      {{ form.descripcion(class="form-control", rows=3, placeholder="Descripción de la muestra, condiciones de recogida…") }}
-    </div>
-
-    <fieldset class="form-fieldset">
-      <legend>Origen</legend>
-      <div class="form-row">
-        <div class="form-group">
-          {{ form.ue_id.label }}
-          {{ form.ue_id(class="form-control") }}
-        </div>
-        <div class="form-group">
-          {{ form.hallazgo_id.label if form.hallazgo_id is defined }}
-          {% if form.hallazgo_id is defined %}{{ form.hallazgo_id(class="form-control") }}{% endif %}
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          {{ form.campana_id.label }}
-          {{ form.campana_id(class="form-control") }}
-        </div>
-        <div class="form-group">
-          {{ form.sector_id.label if form.sector_id is defined }}
-          {% if form.sector_id is defined %}{{ form.sector_id(class="form-control") }}{% endif %}
-        </div>
-      </div>
-    </fieldset>
-
-    <fieldset class="form-fieldset">
-      <legend>Coordenadas de recogida (opcional)</legend>
-      <div class="form-row">
-        <div class="form-group">
-          {{ form.latitud.label if form.latitud is defined }}
-          {% if form.latitud is defined %}{{ form.latitud(class="form-control", step="0.000001") }}{% endif %}
-        </div>
-        <div class="form-group">
-          {{ form.longitud.label if form.longitud is defined }}
-          {% if form.longitud is defined %}{{ form.longitud(class="form-control", step="0.000001") }}{% endif %}
-        </div>
-        <div class="form-group">
-          {{ form.altitud.label if form.altitud is defined }}
-          {% if form.altitud is defined %}{{ form.altitud(class="form-control", step="0.001") }}{% endif %}
-        </div>
-      </div>
-    </fieldset>
-
-    <fieldset class="form-fieldset">
-      <legend>Datos para laboratorio</legend>
-      <div class="form-row">
-        <div class="form-group">
-          {{ form.laboratorio.label if form.laboratorio is defined }}
-          {% if form.laboratorio is defined %}{{ form.laboratorio(class="form-control") }}{% endif %}
-        </div>
-        <div class="form-group">
-          {{ form.peso_gramos.label if form.peso_gramos is defined }}
-          {% if form.peso_gramos is defined %}{{ form.peso_gramos(class="form-control", step="0.01") }}{% endif %}
-        </div>
-      </div>
-      <div class="form-group">
-        {{ form.notas_laboratorio.label if form.notas_laboratorio is defined }}
-        {% if form.notas_laboratorio is defined %}{{ form.notas_laboratorio(class="form-control", rows=2) }}{% endif %}
-      </div>
-    </fieldset>
-
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">
-        {% if muestra %}Guardar cambios{% else %}Registrar muestra{% endif %}
-      </button>
-      <a href="{{ url_for('muestra.listar', yacimiento_id=yacimiento.id) }}" class="btn btn-outline">Cancelar</a>
-    </div>
-  </form>
 </div>
 {% endblock %}
