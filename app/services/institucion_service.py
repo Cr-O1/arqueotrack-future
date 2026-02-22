@@ -22,9 +22,12 @@ JERARQUIA_ROLES = [
 ]
 
 
+class InstitucionService:
+
     @staticmethod
     def buscar(query='', tipo='', pais=''):
         """Busca instituciones por nombre, tipo y país."""
+        from app.models.institucion import Institucion
         q = Institucion.query.filter_by(activa=True)
         if query:
             q = q.filter(Institucion.nombre.ilike(f'%{query}%'))
@@ -42,11 +45,11 @@ JERARQUIA_ROLES = [
             return False
         if mi_rol == 'director_general':
             return True
-        # Simplificación para el MVP
         return True
 
     @staticmethod
     def cambiar_rol(inst, usuario_id, nuevo_rol):
+        from app.models.institucion import UsuarioInstitucion
         membresia = UsuarioInstitucion.query.filter_by(
             institucion_id=inst.id, usuario_id=usuario_id, activo=True
         ).first()
@@ -56,14 +59,13 @@ JERARQUIA_ROLES = [
 
     @staticmethod
     def remover_miembro(inst, usuario_id):
+        from app.models.institucion import UsuarioInstitucion
         membresia = UsuarioInstitucion.query.filter_by(
             institucion_id=inst.id, usuario_id=usuario_id, activo=True
         ).first()
         if membresia:
             membresia.activo = False
             db.session.commit()
-
-class InstitucionService:
 
     @staticmethod
     def crear(nombre: str, tipo: str, fundador_id: int, datos: dict = None, **kwargs) -> Institucion:
@@ -78,7 +80,7 @@ class InstitucionService:
         log.info("Creando institución", nombre=nombre, tipo=tipo, fundador_id=fundador_id)
         inst = Institucion(nombre=nombre, tipo=tipo, **payload)
         db.session.add(inst)
-        db.session.flush()  # obtener ID antes de crear membresía
+        db.session.flush()
 
         membresia = UsuarioInstitucion(
             usuario_id=fundador_id,

@@ -79,6 +79,11 @@ class CampanaService:
     @staticmethod
     @cache.memoize(timeout=600)
     def estadisticas(campana_id: int) -> dict:
+        from app.models.campana import Campana
+        from app.models.muestra import Muestra
+        from app.models.unidad_estratigrafica import UnidadEstratigrafica
+        from sqlalchemy import or_
+        
         campana = Campana.query.get(campana_id)
         if not campana:
             return {}
@@ -95,9 +100,9 @@ class CampanaService:
         ).count()
 
         return {
-            'total_hallazgos': campana.total_hallazgos,
-            'total_ues': campana.total_ues,
+            'num_hallazgos': campana.total_hallazgos,
+            'num_ues': campana.total_ues,
             'duracion_dias': campana.duracion_dias,
-            'total_muestras': total_muestras,
+            'num_muestras': total_muestras,
             'total_miembros': campana.equipo.count(),
         }

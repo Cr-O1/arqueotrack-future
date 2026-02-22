@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Eventos - {{ yacimiento.nombre }}{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="header-section">
+        <h1>Timeline de Eventos</h1>
+        {% if puede_crear %}
+        <a href="{{ url_for('evento.nuevo', yacimiento_id=yacimiento.id) }}" class="btn">Nuevo Evento</a>
+        {% endif %}
+    </div>
+
+    <div class="timeline">
+        {% for e in eventos %}
+        <div class="timeline-item">
+            <div class="timeline-date">{{ e.fecha.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div class="timeline-content card">
+                <h3>{{ e.titulo }}</h3>
+                <p class="badge">{{ e.tipo | capitalize }}</p>
+                <p>{{ e.descripcion }}</p>
+                <div class="timeline-footer">
+                    <span>Hace {{ time_ago(e.fecha) }}</span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p>No hay eventos registrados.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

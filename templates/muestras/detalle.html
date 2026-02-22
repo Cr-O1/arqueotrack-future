@@ -5,8 +5,19 @@
 <div class="main-content">
     <div class="card">
         <h1>Muestra: {{ muestra.codigo }}</h1>
-        <p><strong>Estado:</strong> {{ muestra.estado | replace('_', ' ') | capitalize }}</p>
-        <p><strong>Tipo:</strong> {{ muestra.tipo | capitalize }}</p>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+                <p><strong>Estado:</strong> <span class="badge">{{ muestra.estado | replace('_', ' ') | capitalize }}</span></p>
+                <p><strong>Tipo:</strong> {{ muestra.tipo | capitalize }}</p>
+                <p><strong>UE:</strong> {{ ue.numero_ue if muestra.ue else 'N/A' }}</p>
+                <p><strong>Fecha Recogida:</strong> {{ muestra.fecha_recogida.strftime('%d/%m/%Y') if muestra.fecha_recogida else 'N/A' }}</p>
+            </div>
+            <div>
+                <p><strong>Laboratorio:</strong> {{ muestra.laboratorio or 'Pendiente' }}</p>
+                <p><strong>Ref. Lab:</strong> {{ muestra.numero_laboratorio or 'N/A' }}</p>
+                <p><strong>Peso:</strong> {{ muestra.peso_gramos or '?' }} g</p>
+            </div>
+        </div>
         <p><strong>Descripción:</strong> {{ muestra.descripcion }}</p>
     </div>
 
@@ -16,11 +27,49 @@
         <form action="{{ url_for('muestra.enviar_laboratorio', yacimiento_id=yacimiento.id, muestra_id=muestra.id) }}" method="POST">
             {{ form_lab.hidden_tag() }}
             <div class="form-group">
-                <label>Laboratorio</label>
+                {{ form_lab.laboratorio.label }}
                 {{ form_lab.laboratorio(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form_lab.numero_laboratorio.label }}
+                {{ form_lab.numero_laboratorio(class="form-control") }}
             </div>
             <button type="submit" class="btn">Registrar Envío</button>
         </form>
+    </div>
+    {% elif muestra.estado == 'en_laboratorio' %}
+    <div class="card" style="margin-top: 2rem;">
+        <h2>Registrar Resultado</h2>
+        <form action="{{ url_for('muestra.registrar_resultado', yacimiento_id=yacimiento.id, muestra_id=muestra.id) }}" method="POST">
+            {{ form_resultado.hidden_tag() }}
+            <div class="form-group">
+                {{ form_resultado.tipo_analisis.label }}
+                {{ form_resultado.tipo_analisis(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form_resultado.valor_principal.label }}
+                {{ form_resultado.valor_principal(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form_resultado.descripcion.label }}
+                {{ form_resultado.descripcion(class="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-success">Registrar Resultado</button>
+        </form>
+    </div>
+    {% endif %}
+
+    {% if muestra.tiene_resultado %}
+    <div class="card" style="margin-top: 2rem;">
+        <h2>Resultados de Análisis</h2>
+        {% for r in muestra.resultados %}
+        <div class="result-item" style="padding: 1rem; border-bottom: 1px solid var(--border-color);">
+            <h3>{{ r.tipo_analisis | capitalize }}</h3>
+            <p><strong>Valor:</strong> {{ r.valor_principal }}</p>
+            <p>{{ r.descripcion }}</p>
+            <small>Fecha: {{ r.fecha_resultado.strftime('%d/%m/%Y') }}</small>
+        </div>
+        {% endfor %}
     </div>
     {% endif %}
 </div>

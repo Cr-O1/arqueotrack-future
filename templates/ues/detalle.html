@@ -5,25 +5,55 @@
 <div class="main-content">
     <div class="card">
         <h1>Unidad Estratigráfica {{ ue.numero_ue }}</h1>
-        <p><strong>Tipo:</strong> {{ ue.tipo | capitalize }}</p>
-        <p><strong>Descripción:</strong> {{ ue.descripcion }}</p>
-        <p><strong>Interpretación:</strong> {{ ue.interpretacion }}</p>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+                <p><strong>Tipo:</strong> <span class="badge">{{ ue.tipo | capitalize }}</span></p>
+                <p><strong>Campaña:</strong> {{ ue.campana.nombre if ue.campana else 'N/A' }}</p>
+                <p><strong>Sector:</strong> {{ ue.sector.nombre if ue.sector else 'N/A' }}</p>
+                <p><strong>Cotas:</strong> {{ ue.cota_superior or '?' }} / {{ ue.cota_inferior or '?' }} m</p>
+            </div>
+            <div>
+                <p><strong>Color Munsell:</strong> {{ ue.color_munsell or 'N/A' }}</p>
+                <p><strong>Textura:</strong> {{ ue.textura or 'N/A' }}</p>
+                <p><strong>Compactación:</strong> {{ ue.compactacion or 'N/A' }}</p>
+            </div>
+        </div>
+        <div style="margin-top: 1rem;">
+            <p><strong>Descripción:</strong> {{ ue.descripcion }}</p>
+            <p><strong>Interpretación:</strong> {{ ue.interpretacion }}</p>
+        </div>
     </div>
 
     <div class="card" style="margin-top: 2rem;">
-        <h2>Relaciones Estratigráficas</h2>
-        <form action="{{ url_for('ue.añadir_relacion', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" method="POST">
-            {{ form_relacion.hidden_tag() }}
-            <div class="form-group">
-                <label>Relación con otra UE</label>
-                {{ form_relacion.ue_anterior_id(class="form-control") }}
+        <h2>Matriz de Harris (Relaciones)</h2>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+                <h3>Relaciones Directas</h3>
+                <ul class="list">
+                    {% for r in ue.relaciones_como_posterior %}
+                    <li>{{ r.tipo_relacion | capitalize }} a <strong>UE {{ r.ue_anterior.numero_ue }}</strong></li>
+                    {% endfor %}
+                    {% for r in ue.relaciones_como_anterior %}
+                    <li>Soportada por <strong>UE {{ r.ue_posterior.numero_ue }}</strong></li>
+                    {% endfor %}
+                </ul>
             </div>
-            <div class="form-group">
-                <label>Tipo</label>
-                {{ form_relacion.tipo_relacion(class="form-control") }}
+            <div>
+                <h3>Añadir Nueva Relación</h3>
+                <form action="{{ url_for('ue.añadir_relacion', yacimiento_id=yacimiento.id, ue_id=ue.id) }}" method="POST">
+                    {{ form_relacion.hidden_tag() }}
+                    <div class="form-group">
+                        {{ form_relacion.ue_anterior_id.label }}
+                        {{ form_relacion.ue_anterior_id(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form_relacion.tipo_relacion.label }}
+                        {{ form_relacion.tipo_relacion(class="form-control") }}
+                    </div>
+                    <button type="submit" class="btn">Añadir</button>
+                </form>
             </div>
-            <button type="submit" class="btn">Añadir Relación</button>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}

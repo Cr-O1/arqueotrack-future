@@ -12,6 +12,7 @@ class MuestraService:
 
     @staticmethod
     def crear(yacimiento_id: int, recogida_por_id: int = None, datos: dict = None, **kwargs) -> Muestra:
+        from app.models.muestra import Muestra
         payload = dict(datos or {})
         payload.update(kwargs)
         if recogida_por_id is None:
@@ -31,6 +32,7 @@ class MuestraService:
 
     @staticmethod
     def actualizar(muestra: Muestra | int, datos: dict = None, **kwargs) -> Muestra:
+        from app.models.muestra import Muestra
         if isinstance(muestra, int):
             muestra = Muestra.query.get_or_404(muestra)
         payload = dict(datos or {})
@@ -44,6 +46,7 @@ class MuestraService:
     @staticmethod
     def enviar_a_laboratorio(muestra: Muestra | int, laboratorio: str,
                               numero_laboratorio: str = None) -> Muestra:
+        from app.models.muestra import Muestra
         from datetime import datetime
         if isinstance(muestra, int):
             muestra = Muestra.query.get_or_404(muestra)
@@ -59,6 +62,7 @@ class MuestraService:
     def registrar_resultado(muestra_id: int, tipo_analisis: str, datos: dict = None,
                              revisor_id: int = None, **kwargs) -> ResultadoAnalisis:
         """Registra el resultado de un análisis y actualiza el estado de la muestra."""
+        from app.models.muestra import Muestra, ResultadoAnalisis
         payload = dict(datos or {})
         payload.update(kwargs)
         if revisor_id is None:
