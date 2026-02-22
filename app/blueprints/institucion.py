@@ -53,7 +53,7 @@ def nueva():
                 'pais': form.pais.data,
                 'ciudad': form.ciudad.data,
                 'descripcion': form.descripcion.data,
-                'sitio_web': form.sitio_web.data,
+                'sitio_web': form.web.data,
             }
             inst = InstitucionService.crear(
                 nombre=form.nombre.data,
@@ -111,6 +111,9 @@ def editar(inst_id):
         abort(403)
 
     form = InstitucionForm(obj=inst)
+    if request.method == 'GET':
+        form.web.data = inst.sitio_web
+
     if form.validate_on_submit():
         datos_anteriores = inst.to_dict()
         try:
@@ -120,7 +123,7 @@ def editar(inst_id):
                 'pais': form.pais.data,
                 'ciudad': form.ciudad.data,
                 'descripcion': form.descripcion.data,
-                'sitio_web': form.sitio_web.data,
+                'sitio_web': form.web.data,
             }
             InstitucionService.actualizar(inst, datos)
             AuditService.registrar('update', 'institucion', inst.id,
